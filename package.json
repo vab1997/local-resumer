@@ -1,0 +1,33 @@
+{
+  "name": "local-resumer",
+  "description": "Browser extension that summarizes the current article with an AI model running locally in the browser.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "tsc --noEmit",
+    "copy-ort": "node scripts/copy-ort.mjs",
+    "postinstall": "node scripts/copy-ort.mjs && wxt prepare"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@mozilla/readability": "^0.6.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.2.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@wxt-dev/module-react": "^1.2.2",
+    "typescript": "^5.7.0",
+    "wxt": "^0.20.27"
+  }
+}

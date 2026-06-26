@@ -1,0 +1,17 @@
+node_modules
+.output
+.wxt
+stats.html
+*.log
+.DS_Store
+
+# Generated: ORT wasm binaries copied from node_modules by scripts/copy-ort.mjs (postinstall)
+public/ort
+
+# Throwaway model test outputs
+docs/results test/
+
+# Local Claude Code tooling (not part of the extension)
+.claude/
+.agents/
+skills-lock.json
