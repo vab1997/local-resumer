@@ -1,5 +1,8 @@
-import { Readability } from '@mozilla/readability';
-import type { ExtractArticleRequest, ExtractArticleResponse } from '@/src/shared/messages';
+import type {
+  ExtractArticleRequest,
+  ExtractArticleResponse
+} from '@/src/shared/messages'
+import { Readability } from '@mozilla/readability'
 
 /**
  * Content script: extracts the page's article on demand. It only registers a listener and does
@@ -14,37 +17,37 @@ export default defineContentScript({
       (
         message: ExtractArticleRequest,
         _sender,
-        sendResponse: (response: ExtractArticleResponse) => void,
+        sendResponse: (response: ExtractArticleResponse) => void
       ) => {
-        if (message?.type !== 'EXTRACT_ARTICLE') return undefined;
+        if (message?.type !== 'EXTRACT_ARTICLE') return undefined
 
         try {
-          const clone = document.cloneNode(true) as Document;
-          const parsed = new Readability(clone).parse();
-          const text = parsed?.textContent?.trim() ?? '';
+          const clone = document.cloneNode(true) as Document
+          const parsed = new Readability(clone).parse()
+          const text = parsed?.textContent?.trim() ?? ''
 
           if (!parsed || text.length === 0) {
             sendResponse({
               ok: false,
-              error: "Couldn't find a readable article on this page.",
-            });
-            return true;
+              error: "Couldn't find a readable article on this page."
+            })
+            return true
           }
 
           sendResponse({
             ok: true,
             url: location.href,
             title: parsed.title?.trim() || document.title,
-            textContent: text,
-          });
+            textContent: text
+          })
         } catch (err) {
           sendResponse({
             ok: false,
-            error: `Failed to read the page: ${err instanceof Error ? err.message : String(err)}`,
-          });
+            error: `Failed to read the page: ${err instanceof Error ? err.message : String(err)}`
+          })
         }
-        return true; // keep the message channel open for the async response
-      },
-    );
-  },
-});
+        return true // keep the message channel open for the async response
+      }
+    )
+  }
+})

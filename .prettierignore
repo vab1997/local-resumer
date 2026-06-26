@@ -1,0 +1,20 @@
+.agents
+.claude
+.codex
+.cursor
+.next
+.pnpm-store
+.turbo
+.vercel
+coverage
+dist
+node_modules
+out
+pnpm-lock.yaml
+openspec/changes/archive
+src/db/drizzle/meta
+
+# Project-specific generated output
+.output
+.wxt
+public/ort

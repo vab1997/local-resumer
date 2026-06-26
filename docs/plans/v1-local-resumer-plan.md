@@ -56,14 +56,14 @@ fetch on first run; subsequent runs hit the cache.
 - `sidePanel`.
 - **`tabs`** — needed to read the active tab's id/url from the panel and bind summaries to a
   tab (see Tab binding below). `activeTab` alone is insufficient because the panel must resolve
-  *which* tab to target and detect tab switches.
+  _which_ tab to target and detect tab switches.
 - Page reading via a content script messaged at a specific `tabId`. Keep host access minimal;
   prefer `activeTab`-style on-demand injection over broad `host_permissions` for store review.
 
 ## Tab binding & stale-state correctness (fixes a real spike bug)
 
 **Observed in spike:** summarized an easing-CSS post (correct), then opened a different blog
-and ran again — the second summary was still about the *first* article. **Root cause:** the
+and ran again — the second summary was still about the _first_ article. **Root cause:** the
 Chrome side panel is **window-level and persists across tab switches** (confirmed: panel lives
 on the window, not the tab — hence it stays visible when switching to x.com). The app never
 pinned which tab/article a run belonged to, so run #2 used stale input/state. Three leaks, all
@@ -71,13 +71,13 @@ fixed:
 
 1. **Resolve the target tab fresh at click time.** On Summarize, call
    `chrome.tabs.query({ active: true, lastFocusedWindow: true })` to capture `{ tabId, url }`
-   *at that instant*, then run extraction via `chrome.tabs.sendMessage(tabId, …)` against that
+   _at that instant_, then run extraction via `chrome.tabs.sendMessage(tabId, …)` against that
    exact tab. Never assume "current page."
 2. **Bind the result to its source URL + detect drift.** Tag every summary with `{ tabId, url }`.
    The panel header shows **"Summary for: <url>"**. Subscribe to `chrome.tabs.onActivated` and
    `chrome.tabs.onUpdated` (URL change); when the focused tab's URL no longer matches the
-   displayed summary, mark the panel **stale** with a clear message — *"You're now on <new
-   url>. This summary is for <old url>. Re-summarize?"* — and require an explicit re-run (no
+   displayed summary, mark the panel **stale** with a clear message — _"You're now on <new
+   url>. This summary is for <old url>. Re-summarize?"_ — and require an explicit re-run (no
    surprise auto-inference). This kills the cross-tab confusion directly.
 3. **Stateless inference per run.** Each summarize is a single-turn, fresh-context generation:
    no accumulated chat history, no carried KV/context between runs. Even with correct
@@ -139,11 +139,12 @@ they only share types, not memory).
 One explicit machine so "always message clearly" is structural, not ad hoc:
 
 `idle` → `checking-backend` →
-  - no WebGPU → **`unsupported`** (clear block message; flow ends)
-  - WebGPU ok → `downloading-model` (show **% progress** via Transformers.js `progress_callback`)
-    → `model-ready` → `extracting` (Readability on the pinned `tabId`) → `summarizing`
-    (loading/running indicator) → `done` (render title + TL;DR, tagged with source `url`)
-    | **`error`** (clear, specific message)
+
+- no WebGPU → **`unsupported`** (clear block message; flow ends)
+- WebGPU ok → `downloading-model` (show **% progress** via Transformers.js `progress_callback`)
+  → `model-ready` → `extracting` (Readability on the pinned `tabId`) → `summarizing`
+  (loading/running indicator) → `done` (render title + TL;DR, tagged with source `url`)
+  | **`error`** (clear, specific message)
 
 Cross-cutting **`stale`** condition (from `tabs.onActivated`/`onUpdated`): when the focused
 tab's URL ≠ the displayed summary's URL, overlay "summary is for <other url>, re-summarize?".

@@ -15,21 +15,21 @@
 
 /** Sent from the panel to a specific tab's content script to extract its article. */
 export interface ExtractArticleRequest {
-  type: 'EXTRACT_ARTICLE';
+  type: 'EXTRACT_ARTICLE'
 }
 
 /** Content script's reply: the clean article, or a reason it couldn't extract one. */
 export type ExtractArticleResponse =
   | {
-      ok: true;
-      url: string;
-      title: string;
-      textContent: string;
+      ok: true
+      url: string
+      title: string
+      textContent: string
     }
   | {
-      ok: false;
-      error: string;
-    };
+      ok: false
+      error: string
+    }
 
 // ---------------------------------------------------------------------------
 // Panel -> Inference worker
@@ -37,18 +37,18 @@ export type ExtractArticleResponse =
 
 /** Ask the worker to check WebGPU support and load the model (idempotent). */
 export interface LoadModelRequest {
-  type: 'LOAD_MODEL';
+  type: 'LOAD_MODEL'
 }
 
 /** Ask the worker to summarize article text. Each request is stateless. */
 export interface SummarizeRequest {
-  type: 'SUMMARIZE';
-  requestId: string;
+  type: 'SUMMARIZE'
+  requestId: string
   /** Article body already truncated to the input budget by the caller. */
-  text: string;
+  text: string
 }
 
-export type WorkerRequest = LoadModelRequest | SummarizeRequest;
+export type WorkerRequest = LoadModelRequest | SummarizeRequest
 
 // ---------------------------------------------------------------------------
 // Inference worker -> Panel
@@ -56,40 +56,40 @@ export type WorkerRequest = LoadModelRequest | SummarizeRequest;
 
 /** Worker reports WebGPU is unavailable; the flow is blocked (v1 requires WebGPU). */
 export interface UnsupportedEvent {
-  type: 'UNSUPPORTED';
-  reason: string;
+  type: 'UNSUPPORTED'
+  reason: string
 }
 
 /** Model download/compile progress for a single file. */
 export interface ProgressEvent {
-  type: 'PROGRESS';
+  type: 'PROGRESS'
   /** Transformers.js status, e.g. 'initiate' | 'download' | 'progress' | 'done'. */
-  status: string;
-  file?: string;
+  status: string
+  file?: string
   /** 0..100 overall-ish progress for the current file. */
-  progress?: number;
-  loaded?: number;
-  total?: number;
+  progress?: number
+  loaded?: number
+  total?: number
 }
 
 /** Model is loaded and ready to generate. */
 export interface ModelReadyEvent {
-  type: 'MODEL_READY';
+  type: 'MODEL_READY'
 }
 
 /** Raw generation finished for a request. */
 export interface ResultEvent {
-  type: 'RESULT';
-  requestId: string;
+  type: 'RESULT'
+  requestId: string
   /** Raw model output text; parsing into title/tldr happens on the panel side. */
-  raw: string;
+  raw: string
 }
 
 /** Something failed in the worker. requestId is present for per-request failures. */
 export interface WorkerErrorEvent {
-  type: 'ERROR';
-  requestId?: string;
-  message: string;
+  type: 'ERROR'
+  requestId?: string
+  message: string
 }
 
 export type WorkerEvent =
@@ -97,4 +97,4 @@ export type WorkerEvent =
   | ProgressEvent
   | ModelReadyEvent
   | ResultEvent
-  | WorkerErrorEvent;
+  | WorkerErrorEvent

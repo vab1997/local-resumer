@@ -12,11 +12,11 @@
  */
 
 /** ~4 chars/token heuristic; leaves room for the prompt + worked example + output. */
-export const MAX_INPUT_CHARS = 12_000;
+export const MAX_INPUT_CHARS = 12_000
 
 export interface PromptMessage {
-  role: 'system' | 'user';
-  content: string;
+  role: 'system' | 'user'
+  content: string
 }
 
 /**
@@ -28,7 +28,7 @@ const EXAMPLE_ARTICLE =
   'Florbex is a command-line tool for batch-renaming image files. It groups files by their ' +
   'EXIF capture date and applies a naming template you define. Because it reads metadata ' +
   'locally, it never uploads your photos. The latest release adds a dry-run mode that previews ' +
-  'the changes before writing them.';
+  'the changes before writing them.'
 
 const EXAMPLE_RESPONSE = [
   '<title>Florbex: a local CLI for batch-renaming photos by date</title>',
@@ -40,8 +40,8 @@ const EXAMPLE_RESPONSE = [
     'their EXIF capture date and renames them with a template you define.</detail></point>',
   '<point><heading>Local and private</heading><detail>It reads metadata locally and never ' +
     'uploads your photos.</detail></point>',
-  '</points>',
-].join('\n');
+  '</points>'
+].join('\n')
 
 const SYSTEM_PROMPT = [
   '<task-context>',
@@ -59,8 +59,8 @@ const SYSTEM_PROMPT = [
   '- Respond in the same language as the article.',
   '- Produce the output exactly once. No conclusion, no "final thoughts", no repetition.',
   '- Output only the result tags below, with nothing before or after them.',
-  "- The <examples> section is ONLY a format guide for a different, fictional article. Never " +
-    "reuse its wording, names (such as \"Florbex\"), or topic. Summarize only the user's article.",
+  '- The <examples> section is ONLY a format guide for a different, fictional article. Never ' +
+    'reuse its wording, names (such as "Florbex"), or topic. Summarize only the user\'s article.',
   '</rules>',
   '',
   '<examples>',
@@ -82,14 +82,18 @@ const SYSTEM_PROMPT = [
   '</points>',
   'Include between 3 and 5 <point> entries. <title> is a real, descriptive article title.',
   '<result> is a 2-4 sentence TL;DR.',
-  '</output-formatting>',
-].join('\n');
+  '</output-formatting>'
+].join('\n')
 
 /** Truncate article text to the input budget. Returns the text and whether it was cut. */
-export function truncateArticle(text: string): { text: string; truncated: boolean } {
-  const trimmed = text.trim();
-  if (trimmed.length <= MAX_INPUT_CHARS) return { text: trimmed, truncated: false };
-  return { text: trimmed.slice(0, MAX_INPUT_CHARS), truncated: true };
+export function truncateArticle(text: string): {
+  text: string
+  truncated: boolean
+} {
+  const trimmed = text.trim()
+  if (trimmed.length <= MAX_INPUT_CHARS)
+    return { text: trimmed, truncated: false }
+  return { text: trimmed.slice(0, MAX_INPUT_CHARS), truncated: true }
 }
 
 /** Build the chat messages for a single, stateless summarization run. */
@@ -101,11 +105,11 @@ export function buildMessages(articleText: string): PromptMessage[] {
     '<article>',
     articleText,
     '</article>',
-    '</background-data>',
-  ].join('\n');
+    '</background-data>'
+  ].join('\n')
 
   return [
     { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: user },
-  ];
+    { role: 'user', content: user }
+  ]
 }

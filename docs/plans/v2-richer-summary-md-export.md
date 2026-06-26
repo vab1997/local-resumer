@@ -16,8 +16,9 @@ titles. This must be fixed in THIS iteration, because the new feature adds a har
 section on top of a prompt the model already fails — placeholders would be echoed the same way.
 
 Iteration 2 goals:
+
 1. **Fix adherence** (prerequisite): remove in-tag meta-text, add a one-shot worked example so
-   the small model copies the *pattern* instead of parroting descriptions.
+   the small model copies the _pattern_ instead of parroting descriptions.
 2. **Richer summary**: keep title + TL;DR, add **3–5 key points**, each with a heading + a short
    explanation, pulled only from the article (faithfulness guard).
 3. **Markdown rendering** of the result with **react-markdown** so it looks good.
@@ -29,11 +30,11 @@ points (model picks within range); `react-markdown` for rendering.
 
 ## Two different uses of XML (keep them straight)
 
-1. **Input prompt structure** — organize the prompt we *send* using Anthropic's semantic-XML
+1. **Input prompt structure** — organize the prompt we _send_ using Anthropic's semantic-XML
    section template (`<task-context>`, `<tone-context>`, `<background-data>`, `<rules>`,
    `<examples>`, `<output-formatting>`). Semantic sections help an instruction-tuned model parse
-   *what we want*. This is the user's primary intent for XML.
-2. **Output schema** — the structure the model must *emit* (`<title>`/`<result>`/`<points>`),
+   _what we want_. This is the user's primary intent for XML.
+2. **Output schema** — the structure the model must _emit_ (`<title>`/`<result>`/`<points>`),
    which our parser reads.
 
 ## Output schema (XML) — clean tags, no meta-text
@@ -61,6 +62,7 @@ Restructure the prompt using **Anthropic's semantic-XML section template** (per 
 reference), split across chat roles:
 
 **System message** — the static contract, organized in sections:
+
 - `<task-context>`: "You summarize technical articles about AI and software development."
 - `<tone-context>`: faithful, concise, neutral.
 - `<rules>`: faithfulness (never invent tools/facts, never alter the article's claims), 3–5 key
@@ -73,6 +75,7 @@ reference), split across chat roles:
   text — keep output to the tags only (cleaner parse; a 1B model gains little from CoT here).
 
 **User message** — the per-run data:
+
 - `<background-data>` / `<article>{TRUNCATED_ARTICLE_TEXT}</article>` then a short ask
   ("Summarize the article above following the rules.").
 
@@ -83,7 +86,7 @@ in the slots. That is what stops the echo bug.
 
 **Guard the new failure mode (example content-bleed):** few-shot trades "echo the placeholder"
 for the risk of "echo the example" — a 1B model can pull the example's topic/facts into the real
-summary. So design the example to be *detectable*, not realistic: keep it short, in an unrelated
+summary. So design the example to be _detectable_, not realistic: keep it short, in an unrelated
 sub-domain, and seed it with a **unique made-up token** (e.g. a fake library name like
 `Florbex` that could never appear in a real article). If that token surfaces in a real summary
 during testing, the example bled — caught immediately (see verification).
@@ -100,6 +103,7 @@ during testing, the example bled — caught immediately (see verification).
 
 - **New `src/features/summarize/markdown.ts`**: `summaryToMarkdown(summary): string` builds one
   canonical Markdown doc (the single source of truth for both display and download):
+
   ```
   # {title}
 
@@ -110,7 +114,9 @@ during testing, the example bled — caught immediately (see verification).
   ### {heading}
   {detail}
   ```
+
   Plus `summaryToFilename(summary): string` → a slugified `{title}.md`.
+
 - **`SummaryResult.tsx`**: when `parsedOk`, render `summaryToMarkdown(summary)` via
   `react-markdown` (no raw HTML → CSP-safe, sanitized by default). Keep the raw `<pre>` fallback
   for `!parsedOk`. Add a **Download .md** button: `new Blob([md], { type: 'text/markdown' })` →
@@ -146,8 +152,8 @@ during testing, the example bled — caught immediately (see verification).
 - **Regression on the two known posts** (the ones that failed):
   - `simonwillison.net/2026/Jun/22/porting-moebius/`
   - `animations.dev/learn/animation-theory/the-easing-blueprint`
-  Confirm the **echo bug is gone**: a real title (not "Concise Description"), a clean TL;DR with
-  no leaked instruction text, and 3–5 faithful key points with headings + explanations.
+    Confirm the **echo bug is gone**: a real title (not "Concise Description"), a clean TL;DR with
+    no leaked instruction text, and 3–5 faithful key points with headings + explanations.
 - **Inspect the RAW model output, not just the rendered panel.** The original bug was diagnosed
   through the `parsedOk` render path; log/inspect the raw string and confirm it contains clean
   `<title>`/`<result>`/`<points>` tags with no leaked instruction text.

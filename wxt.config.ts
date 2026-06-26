@@ -1,12 +1,17 @@
-import { defineConfig } from 'wxt';
+import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'wxt'
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
+  vite: () => ({
+    plugins: [tailwindcss()]
+  }),
   manifest: {
     name: 'Local Resumer',
-    description: 'Summarize the current article with an AI model running locally in your browser.',
-    permissions: ['sidePanel', 'tabs'],
+    description:
+      'Summarize the current article with an AI model running locally in your browser.',
+    permissions: ['sidePanel', 'tabs', 'storage'],
     // Clicking the toolbar icon opens the side panel (wired in the background script).
     action: { default_title: 'Open Local Resumer' },
     // Transformers.js compiles ONNX Runtime to WebAssembly: the extension CSP must allow
@@ -18,7 +23,7 @@ export default defineConfig({
       // under CSP and the model never loads. Verified via the resolve redirect chain.
       extension_pages:
         "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; " +
-        "connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co;",
-    },
-  },
-});
+        "connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co;"
+    }
+  }
+})
