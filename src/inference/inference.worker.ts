@@ -1,27 +1,44 @@
 /**
- * Inference worker. Loads the model once (WebGPU) and runs stateless summarizations.
- * Runs off the UI thread so model load + generation never block the side panel.
+ * Inference worker. Loads the model once (WebGPU) and summarizes off the UI thread.
+ *
+ * Short articles run in a single pass; long ones run chunked map-reduce (summarize each chunk →
+ * notes, then synthesize the notes into the final structured output), recursively when the notes
+ * themselves overflow. Passes run sequentially on purpose — the GPU is the bottleneck.
  */
 import type { WorkerEvent, WorkerRequest } from '@/src/shared/messages'
 import { MODEL_ID } from '@/src/shared/types'
 import {
   env,
+  InterruptableStoppingCriteria,
   pipeline,
   type TextGenerationPipeline
 } from '@huggingface/transformers'
 import { checkWebGPU } from './backend'
-import { buildMessages } from './prompt'
+import { chunkArticle } from './chunk'
+import {
+  buildMapMessages,
+  buildMessages,
+  buildReduceMessages,
+  type PromptMessage
+} from './prompt'
+import { countPromptTokens, countTokens, type Tokenizer } from './tokenizer'
 
-// Serve the ONNX Runtime wasm binaries from the extension origin (the default extension CSP
-// blocks fetching them from a CDN). copy-ort.mjs places them in public/ort/.
+// --- Sizing constants (conservative; tune from the Phase-0 spike logs) ---------------------
+const SINGLE_PASS_BUDGET = 3000 // article tokens ≤ this → one fast pass
+const CHUNK_TOKENS = 1800 // target tokens per map chunk (headroom for prompt + output)
+const MAX_CHUNKS = 8 // hard cap (memory safety across sequential WebGPU passes)
+const REDUCE_BUDGET = 2600 // notes tokens before a recursive condense pass
+const MAP_MAX_NEW_TOKENS = 320 // room for 4-8 note bullets per chunk
+const REDUCE_MAX_NEW_TOKENS = 1536 // room for a richer points list without truncation
+const MIN_REDUCE_POINTS = 4
+const MAX_REDUCE_POINTS = 12
+
+// Serve the ONNX Runtime wasm binaries from the extension origin (CSP blocks CDN fetches).
 const wasmBackend = env.backends?.onnx?.wasm
 if (wasmBackend) wasmBackend.wasmPaths = '/ort/'
-// Model weights are fetched from the Hugging Face Hub on first run and cached by the browser.
 env.allowRemoteModels = true
 env.allowLocalModels = false
 
-// The worker global, typed structurally so we don't need the WebWorker lib (which clashes with
-// DOM types used elsewhere).
 const ctx = self as unknown as {
   postMessage: (msg: WorkerEvent) => void
   onmessage: ((e: MessageEvent<WorkerRequest>) => void) | null
@@ -33,7 +50,12 @@ function post(msg: WorkerEvent): void {
 
 let generatorPromise: Promise<TextGenerationPipeline> | null = null
 
-/** Load (or reuse) the cached pipeline. First load downloads + compiles; later loads are fast. */
+// Cancellation state. A fresh InterruptableStoppingCriteria per pass; CANCEL interrupts it and
+// flips `cancelled`, which the orchestrator checks between passes.
+let activeRequestId: string | null = null
+let cancelled = false
+let stopper: InterruptableStoppingCriteria | null = null
+
 function loadModel(): Promise<TextGenerationPipeline> {
   if (!generatorPromise) {
     generatorPromise = pipeline('text-generation', MODEL_ID, {
@@ -65,8 +87,207 @@ function extractGeneratedText(output: unknown): string {
   return typeof gen === 'string' ? gen : String(gen ?? '')
 }
 
+interface PassResult {
+  text: string
+  tokens: number
+}
+
+/** Run one generation pass; returns null if cancelled mid-run. */
+async function runPass(
+  generator: TextGenerationPipeline,
+  messages: PromptMessage[],
+  maxNewTokens: number,
+  useStopStrings: boolean
+): Promise<PassResult | null> {
+  const tokenizer = generator.tokenizer as unknown as Tokenizer
+  const inputTokens = countPromptTokens(tokenizer, messages)
+
+  stopper = new InterruptableStoppingCriteria()
+  const options: Record<string, unknown> = {
+    max_new_tokens: maxNewTokens,
+    do_sample: false,
+    stopping_criteria: stopper
+  }
+  if (useStopStrings) options.stop_strings = ['</points>']
+
+  const output = await generator(messages as never, options as never)
+  if (cancelled) return null
+
+  const text = extractGeneratedText(output)
+  const outputTokens = countTokens(tokenizer, text)
+  return { text, tokens: inputTokens + outputTokens }
+}
+
+/** Group note strings into batches that each fit a token budget. */
+function batchByTokens(
+  tokenizer: Tokenizer,
+  items: string[],
+  budget: number
+): string[][] {
+  const batches: string[][] = []
+  let current: string[] = []
+  let currentTokens = 0
+  for (const item of items) {
+    const t = countTokens(tokenizer, item)
+    if (current.length > 0 && currentTokens + t > budget) {
+      batches.push(current)
+      current = []
+      currentTokens = 0
+    }
+    current.push(item)
+    currentTokens += t
+  }
+  if (current.length > 0) batches.push(current)
+  return batches
+}
+
+async function summarize(
+  generator: TextGenerationPipeline,
+  requestId: string,
+  fullText: string
+): Promise<void> {
+  activeRequestId = requestId
+  cancelled = false
+  const tokenizer = generator.tokenizer as unknown as Tokenizer
+  let totalTokens = 0
+
+  const stop = () => cancelled || activeRequestId !== requestId
+
+  // --- Short article: single pass --------------------------------------------------------
+  const articleTokens = countTokens(tokenizer, fullText)
+  if (articleTokens <= SINGLE_PASS_BUDGET) {
+    const pass = await runPass(
+      generator,
+      buildMessages(fullText),
+      REDUCE_MAX_NEW_TOKENS,
+      true
+    )
+    if (!pass || stop()) return void post({ type: 'CANCELLED', requestId })
+    post({
+      type: 'RESULT',
+      requestId,
+      raw: pass.text,
+      tokens: pass.tokens,
+      capped: false
+    })
+    return
+  }
+
+  // --- Long article: map-reduce ----------------------------------------------------------
+  const { chunks, capped } = chunkArticle(fullText, tokenizer, {
+    chunkTokens: CHUNK_TOKENS,
+    maxChunks: MAX_CHUNKS
+  })
+
+  let notes: string[] = []
+  for (let i = 0; i < chunks.length; i++) {
+    post({
+      type: 'CHUNK_PROGRESS',
+      requestId,
+      phase: 'map',
+      done: i,
+      total: chunks.length
+    })
+    const pass = await runPass(
+      generator,
+      buildMapMessages(chunks[i], { index: i + 1, total: chunks.length }),
+      MAP_MAX_NEW_TOKENS,
+      false
+    )
+    if (!pass || stop()) return void post({ type: 'CANCELLED', requestId })
+    totalTokens += pass.tokens
+    const trimmed = pass.text.trim()
+    notes.push(trimmed)
+    post({
+      type: 'PARTIAL_READY',
+      requestId,
+      index: i,
+      total: chunks.length,
+      notes: trimmed
+    })
+  }
+  post({
+    type: 'CHUNK_PROGRESS',
+    requestId,
+    phase: 'map',
+    done: chunks.length,
+    total: chunks.length
+  })
+
+  // Recursive condense if the notes themselves overflow the reduce budget.
+  while (
+    countTokens(tokenizer, notes.join('\n\n')) > REDUCE_BUDGET &&
+    notes.length > 1
+  ) {
+    const batches = batchByTokens(tokenizer, notes, REDUCE_BUDGET)
+    const condensed: string[] = []
+    for (let j = 0; j < batches.length; j++) {
+      post({
+        type: 'CHUNK_PROGRESS',
+        requestId,
+        phase: 'reduce',
+        done: j,
+        total: batches.length
+      })
+      const pass = await runPass(
+        generator,
+        buildMapMessages(batches[j].join('\n\n'), {
+          index: j + 1,
+          total: batches.length
+        }),
+        MAP_MAX_NEW_TOKENS,
+        false
+      )
+      if (!pass || stop()) return void post({ type: 'CANCELLED', requestId })
+      totalTokens += pass.tokens
+      condensed.push(pass.text.trim())
+    }
+    notes = condensed
+  }
+
+  // Final reduce → structured output. Scale the point count to the article's length so longer
+  // posts get a richer summary (more material → more distinct points), within a finite cap.
+  const maxPoints = Math.min(
+    MAX_REDUCE_POINTS,
+    Math.max(MIN_REDUCE_POINTS, chunks.length * 2)
+  )
+  // Floor scales with length too, so the reduce is pushed to expand (it tends to pick the low end).
+  const minPoints = Math.min(maxPoints, Math.max(MIN_REDUCE_POINTS, chunks.length + 2))
+  post({
+    type: 'CHUNK_PROGRESS',
+    requestId,
+    phase: 'reduce',
+    done: 0,
+    total: 1
+  })
+  const final = await runPass(
+    generator,
+    buildReduceMessages(notes.join('\n\n'), minPoints, maxPoints),
+    REDUCE_MAX_NEW_TOKENS,
+    true
+  )
+  if (!final || stop()) return void post({ type: 'CANCELLED', requestId })
+  totalTokens += final.tokens
+  post({
+    type: 'RESULT',
+    requestId,
+    raw: final.text,
+    tokens: totalTokens,
+    capped
+  })
+}
+
 ctx.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const msg = e.data
+
+  if (msg.type === 'CANCEL') {
+    if (msg.requestId === activeRequestId) {
+      cancelled = true
+      stopper?.interrupt()
+    }
+    return
+  }
+
   try {
     if (msg.type === 'LOAD_MODEL') {
       const gpu = await checkWebGPU()
@@ -81,25 +302,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 
     if (msg.type === 'SUMMARIZE') {
       const generator = await loadModel()
-      // Stateless: a fresh message list every run so a prior article never bleeds in.
-      const messages = buildMessages(msg.text)
-      const output = await generator(
-        messages as never,
-        {
-          // Room for title + TL;DR + 3-5 detailed points.
-          max_new_tokens: 1024,
-          do_sample: false,
-          // Stop as soon as the points block closes — otherwise the model keeps re-emitting it.
-          // (No n-gram repetition guard: the 3B doesn't loop, and forbidding repeated n-grams
-          // mangled repeated proper nouns like "MoEBius" and suppressed similar-starting points.)
-          stop_strings: ['</points>']
-        } as never
-      )
-      post({
-        type: 'RESULT',
-        requestId: msg.requestId,
-        raw: extractGeneratedText(output)
-      })
+      await summarize(generator, msg.requestId, msg.text)
       return
     }
   } catch (err) {

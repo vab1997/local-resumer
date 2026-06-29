@@ -48,7 +48,7 @@ function statusLabel(status: SummaryState['status']): string {
 
 /** Root side-panel view: a slim header (what's running), the state-driven body, and the action. */
 export function SummaryPanel() {
-  const { state, summarize, modelSizeBytes } = useSummarize()
+  const { state, summarize, cancel, modelSizeBytes } = useSummarize()
   const activeUrl = useActiveTabUrl()
 
   const isStale =
@@ -83,7 +83,9 @@ export function SummaryPanel() {
                 <SummaryResult
                   summary={state.summary}
                   source={state.source}
-                  truncated={state.truncated}
+                  capped={state.capped}
+                  elapsedMs={state.elapsedMs}
+                  tokens={state.tokens}
                   stale={isStale}
                   currentUrl={activeUrl}
                 />
@@ -96,18 +98,24 @@ export function SummaryPanel() {
 
         {state.status !== 'unsupported' && (
           <footer className="border-t border-border p-3">
-            <Button
-              className="w-full"
-              onClick={() => void summarize()}
-              disabled={busy || !canSummarize(state)}
-            >
-              {!busy && <Sparkles className="size-4" />}
-              {busy
-                ? 'Working…'
-                : state.status === 'done' && !isStale
-                  ? 'Summarize again'
-                  : 'Summarize this page'}
-            </Button>
+            {state.status === 'summarizing' ? (
+              <Button variant="outline" className="w-full" onClick={cancel}>
+                Cancel
+              </Button>
+            ) : (
+              <Button
+                className="w-full"
+                onClick={() => void summarize()}
+                disabled={busy || !canSummarize(state)}
+              >
+                {!busy && <Sparkles className="size-4" />}
+                {busy
+                  ? 'Working…'
+                  : state.status === 'done' && !isStale
+                    ? 'Summarize again'
+                    : 'Summarize this page'}
+              </Button>
+            )}
           </footer>
         )}
       </div>

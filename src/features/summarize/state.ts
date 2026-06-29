@@ -23,12 +23,22 @@ export type SummaryState =
     }
   | { status: 'ready' }
   | { status: 'extracting' }
-  | { status: 'summarizing' }
+  | {
+      status: 'summarizing'
+      phase?: 'map' | 'reduce'
+      done?: number
+      total?: number
+      partials?: string[]
+    }
   | {
       status: 'done'
       summary: Summary
       source: SummarySource
-      truncated: boolean
+      /** True when a very long article exceeded the chunk cap (only the first part summarized). */
+      capped: boolean
+      /** Wall-clock ms from click to result, and total tokens processed — run-metrics badges. */
+      elapsedMs: number
+      tokens: number
     }
   | { status: 'error'; message: string }
 

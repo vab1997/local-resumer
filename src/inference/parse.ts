@@ -1,6 +1,6 @@
 import type { Summary, SummaryPoint } from '@/src/shared/types'
 
-const MAX_POINTS = 5
+const MAX_POINTS = 12
 
 /** Pull the inner text of the first <tag>...</tag> occurrence, case-insensitive. */
 function extractTag(raw: string, tag: string): string | null {

@@ -88,14 +88,58 @@ export function StatusView({
         />
       )
 
-    case 'summarizing':
+    case 'summarizing': {
+      const { phase, done, total, partials } = state
+      const hasProgress = typeof total === 'number' && total > 0
+      const pct = hasProgress
+        ? Math.round(((done ?? 0) / total) * 100)
+        : undefined
+      const title =
+        phase === 'reduce'
+          ? 'Combining the summary…'
+          : hasProgress
+            ? 'Summarizing the article…'
+            : 'Summarizing…'
       return (
-        <Status
-          spinner
-          title="Summarizing…"
-          detail="Running the model locally on your GPU."
-        />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Spinner />
+            <h2 className="text-[15px] font-semibold">{title}</h2>
+          </div>
+          {hasProgress ? (
+            <>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-200 ease-linear"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {phase === 'reduce' ? 'Combining' : 'Chunk'} {done ?? 0} /{' '}
+                {total}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Running the model locally on your GPU.
+            </p>
+          )}
+          {partials && partials.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {partials.map((notes, i) => (
+                <div
+                  key={i}
+                  className="animate-in rounded-md border border-border bg-muted/40 p-2 text-xs whitespace-pre-wrap text-muted-foreground duration-300 fill-mode-both fade-in slide-in-from-bottom-1"
+                  style={{ animationDelay: `${i * 30}ms` }}
+                >
+                  {notes}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
       )
+    }
 
     case 'error':
       return (

@@ -1,7 +1,9 @@
+import { Badge } from '@/src/components/ui/badge'
 import { Button } from '@/src/components/ui/button'
 import type { Summary } from '@/src/shared/types'
-import { Download } from 'lucide-react'
+import { Clock, Download, Hash } from 'lucide-react'
 import Markdown from 'react-markdown'
+import { formatDuration, formatTokens } from '../format'
 import { summaryToFilename, summaryToMarkdown } from '../markdown'
 import type { SummarySource } from '../state'
 
@@ -23,13 +25,17 @@ function Md({ children }: { children: string }) {
 export function SummaryResult({
   summary,
   source,
-  truncated,
+  capped,
+  elapsedMs,
+  tokens,
   stale,
   currentUrl
 }: {
   summary: Summary
   source: SummarySource
-  truncated: boolean
+  capped: boolean
+  elapsedMs: number
+  tokens: number
   stale: boolean
   currentUrl?: string
 }) {
@@ -62,9 +68,9 @@ export function SummaryResult({
         </div>
       )}
 
-      {truncated && (
+      {capped && (
         <div className="rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-          The article was long, so only the beginning was summarized.
+          Very long article — summarized the first part.
         </div>
       )}
 
@@ -117,6 +123,24 @@ export function SummaryResult({
           </pre>
         </>
       )}
+
+      {/* Run metrics — elapsed time + total tokens, for the curious. */}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <Badge
+          variant="outline"
+          className="gap-1 font-normal text-muted-foreground"
+        >
+          <Clock className="size-3" />
+          {formatDuration(elapsedMs)}
+        </Badge>
+        <Badge
+          variant="outline"
+          className="gap-1 font-normal text-muted-foreground"
+        >
+          <Hash className="size-3" />
+          {formatTokens(tokens)}
+        </Badge>
+      </div>
 
       <footer className="mt-1 flex items-center justify-between gap-3 border-t border-border pt-3">
         <Button variant="outline" size="sm" onClick={download}>

@@ -44,11 +44,17 @@ export interface LoadModelRequest {
 export interface SummarizeRequest {
   type: 'SUMMARIZE'
   requestId: string
-  /** Article body already truncated to the input budget by the caller. */
+  /** Full extracted article body. The worker decides single-pass vs chunked map-reduce by tokens. */
   text: string
 }
 
-export type WorkerRequest = LoadModelRequest | SummarizeRequest
+/** Ask the worker to abort the in-flight run (checked per token). */
+export interface CancelRequest {
+  type: 'CANCEL'
+  requestId: string
+}
+
+export type WorkerRequest = LoadModelRequest | SummarizeRequest | CancelRequest
 
 // ---------------------------------------------------------------------------
 // Inference worker -> Panel
@@ -77,12 +83,40 @@ export interface ModelReadyEvent {
   type: 'MODEL_READY'
 }
 
+/** Coarse progress through the chunked map-reduce passes. */
+export interface ChunkProgressEvent {
+  type: 'CHUNK_PROGRESS'
+  requestId: string
+  phase: 'map' | 'reduce'
+  done: number
+  total: number
+}
+
+/** A finished chunk's mini-summary (map layer), for the live partials list. */
+export interface PartialReadyEvent {
+  type: 'PARTIAL_READY'
+  requestId: string
+  index: number
+  total: number
+  notes: string
+}
+
 /** Raw generation finished for a request. */
 export interface ResultEvent {
   type: 'RESULT'
   requestId: string
   /** Raw model output text; parsing into title/tldr happens on the panel side. */
   raw: string
+  /** Total tokens processed (input + output) across all passes, for the run-metrics badge. */
+  tokens: number
+  /** True when the article exceeded the chunk cap and only its first part was summarized. */
+  capped: boolean
+}
+
+/** The run was cancelled by the user. */
+export interface CancelledEvent {
+  type: 'CANCELLED'
+  requestId: string
 }
 
 /** Something failed in the worker. requestId is present for per-request failures. */
@@ -96,5 +130,8 @@ export type WorkerEvent =
   | UnsupportedEvent
   | ProgressEvent
   | ModelReadyEvent
+  | ChunkProgressEvent
+  | PartialReadyEvent
   | ResultEvent
+  | CancelledEvent
   | WorkerErrorEvent
