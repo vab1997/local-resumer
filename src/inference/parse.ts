@@ -48,7 +48,9 @@ function extractPoints(raw: string): SummaryPoint[] {
  * flag it. Points are best-effort — a clean title + TL;DR with no points still renders.
  */
 export function parseSummary(raw: string): Summary {
-  const cleaned = raw.trim()
+  // Safety net for reasoning models (e.g. SmolLM3): even with thinking disabled, a stray
+  // <think>…</think> block can slip in before the schema. Drop it so it never pollutes parsing.
+  const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
   const title = extractTag(cleaned, 'title')
   const tldr = extractTag(cleaned, 'result')
   // Scan for points OUTSIDE the result block, so a stray point leaked into <result> can't

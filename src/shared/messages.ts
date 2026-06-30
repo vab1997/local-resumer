@@ -35,9 +35,12 @@ export type ExtractArticleResponse =
 // Panel -> Inference worker
 // ---------------------------------------------------------------------------
 
-/** Ask the worker to check WebGPU support and load the model (idempotent). */
+/** Ask the worker to check WebGPU support and load the given model (idempotent per worker).
+ *  Each model runs in its own worker — switching models recreates the worker (see useSummarize). */
 export interface LoadModelRequest {
   type: 'LOAD_MODEL'
+  /** HF repo id of the model to load (from the registry in shared/models.ts). */
+  modelId: string
 }
 
 /** Ask the worker to summarize article text. Each request is stateless. */

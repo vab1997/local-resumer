@@ -144,7 +144,7 @@ These were added/changed during implementation, beyond the original plan above.
 
 ### Information-architecture refinements (after first screenshots)
 
-- **Model card is persistent** — `ModelCard` renders in the panel `<main>` in *every* state
+- **Model card is persistent** — `ModelCard` renders in the panel `<main>` in _every_ state
   (idle, downloading, summarizing, result…), not just the ready state. It stays mounted (outside
   the keyed crossfade wrapper) so it never re-animates.
 - **Header shows live status, not the model name** — to avoid duplicating the model label (now in
@@ -165,15 +165,15 @@ These were added/changed during implementation, beyond the original plan above.
 - **ESLint** flat config (`eslint.config.js`): `@eslint/js` + `typescript-eslint` +
   `eslint-plugin-react-hooks` + `eslint-config-prettier`; browser/webextensions globals, Node
   globals for `scripts/` + config files. (react-hooks v7 has no usable flat preset, so its plugin
-  + `configs.recommended.rules` are wired manually.)
+  - `configs.recommended.rules` are wired manually.)
 - Scripts: `lint`, `lint:fix`, `format`, `format:check`.
 
 ### Performance (Vercel react-best-practices review — applied A+B+C+G)
 
 - **A — lazy-load the result view** (`bundle-dynamic-imports`): `SummaryResult` is `React.lazy`
-  + `Suspense`, so `react-markdown` (micromark) splits out of the panel's initial bundle.
-  Measured: panel chunk **~402 kB → ~286 kB**; a separate **~119 kB** `SummaryResult` chunk loads
-  only when a summary exists. (`@huggingface/transformers` was already isolated in the worker.)
+  - `Suspense`, so `react-markdown` (micromark) splits out of the panel's initial bundle.
+    Measured: panel chunk **~402 kB → ~286 kB**; a separate **~119 kB** `SummaryResult` chunk loads
+    only when a summary exists. (`@huggingface/transformers` was already isolated in the worker.)
 - **B — throttle download progress** (`rerender-use-ref-transient-values`): Transformers.js fires
   the progress callback very frequently; `useSummarize` now re-renders only when the integer
   percent changes (`lastPctRef`), and `setModelSizeBytes` bails out when the size is unchanged.

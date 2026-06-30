@@ -1,12 +1,17 @@
 import { Button } from '@/src/components/ui/button'
 import { TooltipProvider } from '@/src/components/ui/tooltip'
 import { cn } from '@/src/lib/utils'
+import { getModelSpec } from '@/src/shared/models'
 import { Sparkles } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import { canSummarize, isBusy, type SummaryState } from '../state'
 import { useActiveTabUrl } from '../useActiveTabUrl'
+import { useHardwareProfile } from '../useHardwareProfile'
+import { useCachedModelIds, useModelSelection } from '../useModelSelection'
 import { useSummarize } from '../useSummarize'
+import { HardwareInfoBar } from './HardwareInfoBar'
 import { ModelCard } from './ModelCard'
+import { ModelSelector } from './ModelSelector'
 import { StatusView } from './StatusView'
 import { SummaryResultSkeleton } from './SummaryResultSkeleton'
 
@@ -48,7 +53,11 @@ function statusLabel(status: SummaryState['status']): string {
 
 /** Root side-panel view: a slim header (what's running), the state-driven body, and the action. */
 export function SummaryPanel() {
-  const { state, summarize, cancel, modelSizeBytes } = useSummarize()
+  const { selectedModelId, setSelectedModelId } = useModelSelection()
+  const hardware = useHardwareProfile()
+  const cachedIds = useCachedModelIds()
+  const { state, summarize, cancel, modelSizeBytes } =
+    useSummarize(selectedModelId)
   const activeUrl = useActiveTabUrl()
 
   const isStale =
@@ -56,6 +65,7 @@ export function SummaryPanel() {
     activeUrl !== undefined &&
     activeUrl !== state.source.url
   const busy = isBusy(state)
+  const activeSpec = getModelSpec(selectedModelId ?? '')
 
   return (
     <TooltipProvider delayDuration={250}>
@@ -73,8 +83,16 @@ export function SummaryPanel() {
         </header>
 
         <main className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-          {/* The model/info card stays visible in every state. */}
-          <ModelCard modelSizeBytes={modelSizeBytes} />
+          {/* Hardware + model selection stay visible in every state. */}
+          <HardwareInfoBar hardware={hardware} />
+          <ModelSelector
+            selectedModelId={selectedModelId ?? activeSpec.id}
+            onSelect={setSelectedModelId}
+            hardware={hardware}
+            cachedIds={cachedIds}
+            disabled={busy}
+          />
+          <ModelCard spec={activeSpec} modelSizeBytes={modelSizeBytes} />
 
           {/* Keyed on status so each state crossfades in on change (not on every progress tick). */}
           <div key={state.status} className="animate-in duration-200 fade-in">

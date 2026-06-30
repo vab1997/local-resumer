@@ -15,7 +15,7 @@ with one-click `.md` export.
 
 - **WXT** (extension framework) · **React + TypeScript** · side panel.
 - **Transformers.js** (`@huggingface/transformers`) — local inference over **WebGPU**, ONNX Runtime
-  Web. Model: **`onnx-community/Llama-3.2-3B-Instruct`** (q4f16).
+  Web. **User-selectable model** (q4f16) from a registry; default **`onnx-community/Llama-3.2-3B-Instruct`**.
 - **Tailwind v4 + shadcn** (Radix primitives) · **react-markdown** (render) · **lucide-react** (icons).
 - **@mozilla/readability** (article extraction).
 - **Prettier** (`semi:false`, single quotes, `trailingComma:none`, organize-imports + tailwindcss) ·
@@ -56,25 +56,33 @@ chunking), `tokenizer.ts` (token counting), `parse.ts` (XML → summary).
   per-chunk notes (lean map prompt) → reduce into final XML, recursively if notes overflow. Passes
   run sequentially (GPU-bound). **Per-token cancel** via `InterruptableStoppingCriteria`.
 - **Run metrics**: elapsed time + total tokens shown as badges.
+- **User-selectable model** (v5): a curated ONNX **q4f16** registry (`src/shared/models.ts`); the
+  panel shows a selector + hardware-feasibility bar. Same prompt/generation config for every model
+  (only per-model runtime value is `dtype` + SmolLM3 reasoning-off). Swap = **worker recreation**
+  (`terminate()` frees VRAM; `dispose()` unproven). No swap mid-run (panel disabled while busy).
 
 ## Iteration history (rationale lives in the plans)
 
-| It. | What                                                                                                                | Plan                                               |
-| --- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| v1  | Scaffold; side panel; WebGPU inference; title + TL;DR; tab-binding                                                  | `docs/plans/v1-local-resumer-plan.md`              |
-| v2  | Key points; `.md` export; semantic-XML prompt + one-shot example; **1B → 3B** model escalation                      | `docs/plans/v2-richer-summary-md-export.md`        |
-| v3  | UI redesign (Tailwind v4 + shadcn, model card, badges, motion); Prettier + ESLint; perf (lazy-load, throttle, memo) | `docs/plans/v3-improvement-ui-and-optimize-app.md` |
-| v4  | Long articles via **chunk + map-reduce**; per-token cancel; run-metrics badges; richer scaled points                | `docs/plans/v4-long-articles-chunk-mapreduce.md`   |
+| It. | What                                                                                                                       | Plan                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| v1  | Scaffold; side panel; WebGPU inference; title + TL;DR; tab-binding                                                         | `docs/plans/v1-local-resumer-plan.md`              |
+| v2  | Key points; `.md` export; semantic-XML prompt + one-shot example; **1B → 3B** model escalation                             | `docs/plans/v2-richer-summary-md-export.md`        |
+| v3  | UI redesign (Tailwind v4 + shadcn, model card, badges, motion); Prettier + ESLint; perf (lazy-load, throttle, memo)        | `docs/plans/v3-improvement-ui-and-optimize-app.md` |
+| v4  | Long articles via **chunk + map-reduce**; per-token cancel; run-metrics badges; richer scaled points                       | `docs/plans/v4-long-articles-chunk-mapreduce.md`   |
+| v5  | **Model selector** (registry) + **hardware feasibility** bar; per-model swap via worker recreation; same prompt all models | `docs/plans/v5-model-selector-hardware.md`         |
 
 ## Current state & deferred
 
 **Works:** local WebGPU summarization, short + long (map-reduce) articles, faithful structured
-output, `.md` export, cancel, metrics, polished UI.
+output, `.md` export, cancel, metrics, polished UI, **model selector + hardware-feasibility bar**
+(Llama-3.2-3B default, SmolLM3-3B, Phi-3.5-mini, Llama-3.2-1B).
 
-**Deferred:** WASM fallback (for non-WebGPU devices); **model selection UI** (the tokenizer approach
-already supports any model); Firefox polish; **KV/prefix-cache reuse across passes** (separate spike
-— unconfirmed in Transformers.js + onnxruntime-web); Vercel review findings D (drop `forwardRef`),
-E (hoist regex), F (lucide deep imports).
+**v5 needs browser validation (built + type-clean, not yet run on real GPU):** no-OOM on model swap;
+per-model XML-schema adherence under the shared prompt (SmolLM3 no `<think>`, Phi keeps schema).
+
+**Deferred:** WASM fallback (for non-WebGPU devices); Firefox polish; **KV/prefix-cache reuse across
+passes** (separate spike — unconfirmed in Transformers.js + onnxruntime-web); Vercel review findings
+D (drop `forwardRef`), E (hoist regex), F (lucide deep imports).
 
 ## Commands
 
