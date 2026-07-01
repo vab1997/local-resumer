@@ -166,7 +166,7 @@ emits the XML schema and runs once (or a few times if hierarchical).
 
 - **`state.ts`**: `summarizing` gains optional progress —
   `{ status: 'summarizing'; phase?: 'map' | 'reduce'; done?: number; total?: number;
-  partials?: string[] }`. `done` gains `capped: boolean` (replaces the old `truncated` meaning)
+partials?: string[] }`. `done` gains `capped: boolean` (replaces the old `truncated` meaning)
   plus `elapsedMs: number` and `tokens: number` for the run-metrics badges.
 - **`useSummarize.ts`**: send full text; handle `CHUNK_PROGRESS` (N/M progress), `PARTIAL_READY`
   (append to a partials list, cleared when `RESULT` arrives), and `CANCELLED` (→ `ready`/prior
@@ -223,6 +223,7 @@ emits the XML schema and runs once (or a few times if hierarchical).
 Built per the plan, then verified on real articles. Notable outcomes/decisions:
 
 ### Worker API confirmed
+
 - `InterruptableStoppingCriteria` (exported by transformers.js v4) drives **per-token cancel**:
   fresh instance per pass, `stopping_criteria: stopper`, `.interrupt()` on `CANCEL`. Verified to
   stop in ~1 s mid-pass and return the panel to `ready` (not the laggy between-pass fallback).
@@ -230,6 +231,7 @@ Built per the plan, then verified on real articles. Notable outcomes/decisions:
   output via `encode` of the generated text; summed across all passes for the metrics badge.
 
 ### Measured latency (the Phase-0 spike, run via temporary `[pass]` logging, since removed)
+
 - ~21 s per pass at ~1.8k input tokens on the 3B/WebGPU. A 3-chunk article = 4 passes ≈ 69 s.
 - **Latency trend across the multi-pass run DECREASED** (21.8 → 21.0 → 14.4 → 11.5 s) — no
   slowdown/growth, tab stable. (`performance.memory` was `n/a` in-worker, so latency trend — not a
@@ -237,9 +239,11 @@ Built per the plan, then verified on real articles. Notable outcomes/decisions:
   `MAX_CHUNKS=8`, `SINGLE_PASS_BUDGET=3000`, `REDUCE_BUDGET=2600`.
 
 ### Richer summary (added after testing showed long posts gave too few points)
+
 The reduce over-compressed: a 3-chunk article produced rich map notes (~8 distinct ideas, verified
 via temporary `[diag]` logging) but only 3 final points. Root cause was the reduce being told a
 low-floored range and picking the minimum — NOT a map-coverage problem. Fixes:
+
 - Point count moved OUT of `SYSTEM_PROMPT` into each call's user message (single-pass vs reduce).
 - Single-pass keeps "3 to 5". **Reduce scales to length**: `minPoints = clamp(chunks+2, 4, max)`,
   `maxPoints = clamp(chunks*2, 4, 12)` (3 chunks → 5-6; 8 chunks → 10-12), plus the directive
@@ -250,6 +254,7 @@ low-floored range and picking the minimum — NOT a map-coverage problem. Fixes:
 - Verified: the same long article went **3 → 6 faithful, distinct points**, no padding/truncation.
 
 ### Removed before commit
+
 The temporary `[pass]` and `[diag]` `console.log` instrumentation (used for the spike + the
 points diagnosis) is stripped from `inference.worker.ts`.
 

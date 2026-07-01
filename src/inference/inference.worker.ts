@@ -6,7 +6,7 @@
  * themselves overflow. Passes run sequentially on purpose — the GPU is the bottleneck.
  */
 import type { WorkerEvent, WorkerRequest } from '@/src/shared/messages'
-import { MODEL_ID } from '@/src/shared/types'
+import { DEFAULT_MODEL_ID, getModelSpec } from '@/src/shared/models'
 import {
   env,
   InterruptableStoppingCriteria,
@@ -49,6 +49,9 @@ function post(msg: WorkerEvent): void {
 }
 
 let generatorPromise: Promise<TextGenerationPipeline> | null = null
+// The model this worker loads. Set on LOAD_MODEL; a different model = a different worker, so this
+// is effectively constant for the worker's lifetime (the orchestrator recreates the worker to swap).
+let currentModelId = DEFAULT_MODEL_ID
 
 // Cancellation state. A fresh InterruptableStoppingCriteria per pass; CANCEL interrupts it and
 // flips `cancelled`, which the orchestrator checks between passes.
@@ -58,9 +61,10 @@ let stopper: InterruptableStoppingCriteria | null = null
 
 function loadModel(): Promise<TextGenerationPipeline> {
   if (!generatorPromise) {
-    generatorPromise = pipeline('text-generation', MODEL_ID, {
+    const spec = getModelSpec(currentModelId)
+    generatorPromise = pipeline('text-generation', spec.id, {
       device: 'webgpu',
-      dtype: 'q4f16',
+      dtype: spec.runtime.dtype,
       progress_callback: (p: Record<string, unknown>) => {
         post({
           type: 'PROGRESS',
@@ -74,6 +78,19 @@ function loadModel(): Promise<TextGenerationPipeline> {
     }) as Promise<TextGenerationPipeline>
   }
   return generatorPromise
+}
+
+/**
+ * Reasoning-model control. Reasoning models (SmolLM3) otherwise prepend a `<think>…</think>` block
+ * that breaks the XML schema. We disable thinking at the chat boundary by adding the `/no_think`
+ * control token to the system message — the shared prompt text itself is left untouched. parse.ts
+ * also strips any stray `<think>` block as a safety net.
+ */
+function applyThinkingControl(messages: PromptMessage[]): PromptMessage[] {
+  if (!getModelSpec(currentModelId).runtime.disableThinking) return messages
+  return messages.map((m) =>
+    m.role === 'system' ? { ...m, content: `${m.content}\n/no_think` } : m
+  )
 }
 
 /** Pull the assistant's text out of a text-generation result produced from chat messages. */
@@ -100,6 +117,7 @@ async function runPass(
   useStopStrings: boolean
 ): Promise<PassResult | null> {
   const tokenizer = generator.tokenizer as unknown as Tokenizer
+  messages = applyThinkingControl(messages)
   const inputTokens = countPromptTokens(tokenizer, messages)
 
   stopper = new InterruptableStoppingCriteria()
@@ -252,7 +270,10 @@ async function summarize(
     Math.max(MIN_REDUCE_POINTS, chunks.length * 2)
   )
   // Floor scales with length too, so the reduce is pushed to expand (it tends to pick the low end).
-  const minPoints = Math.min(maxPoints, Math.max(MIN_REDUCE_POINTS, chunks.length + 2))
+  const minPoints = Math.min(
+    maxPoints,
+    Math.max(MIN_REDUCE_POINTS, chunks.length + 2)
+  )
   post({
     type: 'CHUNK_PROGRESS',
     requestId,
@@ -290,6 +311,7 @@ ctx.onmessage = async (e: MessageEvent<WorkerRequest>) => {
 
   try {
     if (msg.type === 'LOAD_MODEL') {
+      currentModelId = msg.modelId
       const gpu = await checkWebGPU()
       if (!gpu.ok) {
         post({ type: 'UNSUPPORTED', reason: gpu.reason })

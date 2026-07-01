@@ -19,8 +19,8 @@ the workflow rules.
 
 ## Status
 
-Shipping. Four iterations done (v1 scaffold → v4 long-article map-reduce). The app builds and runs.
-See `docs/context/app-context.md` and `docs/plans/v1..v4` for detail.
+Shipping. Five iterations done (v1 scaffold → v5 model selector + hardware feasibility). The app
+builds and runs. See `docs/context/app-context.md` and `docs/plans/v1..v5` for detail.
 
 ## Goal
 
@@ -33,7 +33,8 @@ panel**, built with React.
 - **WXT** — extension framework (build, dev, manifest, HMR, cross-browser). https://wxt.dev
 - **React + TypeScript** — side panel UI.
 - **Transformers.js** (`@huggingface/transformers`) — local inference, ONNX Runtime Web, **WebGPU**.
-  Model: `onnx-community/Llama-3.2-3B-Instruct` (q4f16).
+  User-selectable model (q4f16 registry in `src/shared/models.ts`); default
+  `onnx-community/Llama-3.2-3B-Instruct`.
 - **Tailwind v4 + shadcn** (Radix) — styling/components. **react-markdown** — render summaries.
 - **@mozilla/readability** — article extraction. **Prettier + ESLint** — formatting/linting.
 - **Side panel API** — Chrome `chrome.sidePanel`.

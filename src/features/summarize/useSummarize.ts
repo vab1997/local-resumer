@@ -1,14 +1,12 @@
 import { parseSummary } from '@/src/inference/parse'
 import type { WorkerEvent, WorkerRequest } from '@/src/shared/messages'
-import { MODEL_ID } from '@/src/shared/types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   extractActiveTabArticle,
   ExtractionError
 } from '../article-extraction/extract'
 import type { SummarySource, SummaryState } from './state'
-
-const MODEL_SIZE_KEY = `modelSize:${MODEL_ID}`
+import { modelCacheKey } from './useModelSelection'
 
 interface Progress {
   phase: 'map' | 'reduce'
@@ -20,8 +18,11 @@ interface Progress {
  * Owns the inference worker and orchestrates one summarize run end-to-end. The worker handles
  * single-pass vs chunked map-reduce internally; this hook sends the full article, tracks progress
  * / partials, measures wall-clock time, and supports cancellation.
+ *
+ * The worker is loaded for one model. Switching `selectedModelId` recreates the worker — terminating
+ * the old one drops its WebGPU device and reclaims all VRAM (the reliable way to swap models).
  */
-export function useSummarize() {
+export function useSummarize(selectedModelId: string | undefined) {
   const [state, setState] = useState<SummaryState>({
     status: 'checking-backend'
   })
@@ -39,13 +40,17 @@ export function useSummarize() {
   )
   const lastPctRef = useRef(-1)
 
-  // Show the last measured size immediately (cache loads may not re-emit byte progress).
+  // Show the selected model's last measured size immediately (cache loads may not re-emit byte
+  // progress). Re-runs on model change so the badge reflects the active model.
   useEffect(() => {
-    chrome.storage.local.get(MODEL_SIZE_KEY).then((stored) => {
-      const size = stored[MODEL_SIZE_KEY]
-      if (typeof size === 'number' && size > 0) setModelSizeBytes(size)
+    if (!selectedModelId) return
+    const key = modelCacheKey(selectedModelId)
+    chrome.storage.local.get(key).then((stored) => {
+      const size = stored[key]
+      // Set to the cached size, or clear it for a model that hasn't been downloaded yet.
+      setModelSizeBytes(typeof size === 'number' && size > 0 ? size : undefined)
     })
-  }, [])
+  }, [selectedModelId])
 
   // Render the summarizing state from refs so progress + partials stay in sync.
   const renderSummarizing = useCallback(() => {
@@ -59,6 +64,19 @@ export function useSummarize() {
   }, [])
 
   useEffect(() => {
+    // Wait until the persisted model choice has resolved before creating the worker (avoids
+    // loading the default and immediately swapping it).
+    if (!selectedModelId) return
+
+    // Fresh worker for this model. Reset all download accumulators so a swap doesn't mix the new
+    // model's progress with the previous model's file entries. State is reset by the new worker's
+    // own lifecycle (PROGRESS → downloading, or MODEL_READY → ready), clearing any stale summary.
+    filesRef.current.clear()
+    lastPctRef.current = -1
+    partialsRef.current = []
+    progressRef.current = undefined
+    requestIdRef.current = null
+
     const worker = new Worker(
       new URL('../../inference/inference.worker.ts', import.meta.url),
       { type: 'module' }
@@ -111,14 +129,14 @@ export function useSummarize() {
         case 'MODEL_READY': {
           let totalBytes = 0
           for (const f of filesRef.current.values()) totalBytes += f.total
-          if (totalBytes > 0) {
-            void chrome.storage.local.set({ [MODEL_SIZE_KEY]: totalBytes })
+          if (totalBytes > 0 && selectedModelId) {
+            void chrome.storage.local.set({
+              [modelCacheKey(selectedModelId)]: totalBytes
+            })
           }
-          setState((prev) =>
-            prev.status === 'downloading' || prev.status === 'checking-backend'
-              ? { status: 'ready' }
-              : prev
-          )
+          // MODEL_READY fires once per worker load and never during a run (swaps are blocked while
+          // busy), so it's always safe to land in ready — this also clears a stale summary on swap.
+          setState({ status: 'ready' })
           break
         }
         case 'CHUNK_PROGRESS':
@@ -168,13 +186,16 @@ export function useSummarize() {
       })
     }
 
-    worker.postMessage({ type: 'LOAD_MODEL' } satisfies WorkerRequest)
+    worker.postMessage({
+      type: 'LOAD_MODEL',
+      modelId: selectedModelId
+    } satisfies WorkerRequest)
 
     return () => {
       worker.terminate()
       workerRef.current = null
     }
-  }, [renderSummarizing])
+  }, [renderSummarizing, selectedModelId])
 
   const summarize = useCallback(async () => {
     const worker = workerRef.current
