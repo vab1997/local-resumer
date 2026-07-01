@@ -18,12 +18,16 @@ export default defineConfig({
     // wasm. Model weights are fetched from the Hugging Face Hub on first run, so connect-src
     // must allow it (CDN fetches are otherwise blocked by the default extension CSP).
     content_security_policy: {
-      // Weights + tokenizer redirect from huggingface.co to HF's regional Xet CDN
-      // (e.g. us.aws.cdn.hf.co), so *.hf.co must be allowed or the browser blocks the fetch
-      // under CSP and the model never loads. Verified via the resolve redirect chain.
+      // connect-src hosts:
+      //  - huggingface.co + *.hf.co: local model weights + tokenizer (redirect to HF's regional
+      //    Xet CDN, e.g. us.aws.cdn.hf.co), or the browser blocks the fetch and the model never loads.
+      //  - api.openai.com + api.anthropic.com: cloud-provider inference via the AI SDK (v6). Anthropic
+      //    additionally needs the `anthropic-dangerous-direct-browser-access` request header (set in
+      //    cloud.ts) to allow a browser-origin call.
       extension_pages:
         "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; " +
-        "connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co;"
+        "connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co " +
+        'https://api.openai.com https://api.anthropic.com;'
     }
   }
 })

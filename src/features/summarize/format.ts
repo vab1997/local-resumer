@@ -8,6 +8,15 @@ export function formatDuration(ms: number): string {
   return `${m}m ${s}s`
 }
 
+/** USD cost, e.g. 0.00021 -> "<$0.01", 0.034 -> "$0.034". Small amounts keep enough precision. */
+export function formatCost(usd: number): string {
+  if (!Number.isFinite(usd) || usd < 0) return '—'
+  if (usd === 0) return '$0'
+  if (usd < 0.01) return '<$0.01'
+  const decimals = usd < 1 ? 3 : 2
+  return `$${usd.toFixed(decimals)}`
+}
+
 /** Token count with thousands grouping, e.g. 3420 -> "3,420 tokens". */
 export function formatTokens(n: number): string {
   if (!Number.isFinite(n) || n < 0) return '—'

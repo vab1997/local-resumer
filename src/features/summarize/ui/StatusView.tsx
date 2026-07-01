@@ -1,6 +1,6 @@
 import { Badge } from '@/src/components/ui/badge'
-import { FileText } from 'lucide-react'
-import { formatBytes } from '../format'
+import { FileText, KeyRound } from 'lucide-react'
+import { formatBytes, formatCost, formatTokens } from '../format'
 import type { SummaryState } from '../state'
 import { WebGpuActivationSteps } from './WebGpuInfo'
 
@@ -31,6 +31,11 @@ export function StatusView({
             Local Resumer runs the model on your GPU via WebGPU. To enable it:
           </p>
           <WebGpuActivationSteps />
+          <p className="mt-1 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            No WebGPU? Pick a <span className="font-medium">Cloud</span> model
+            above — those run on a provider with your API key and don&rsquo;t
+            need WebGPU (the article text is sent to the provider).
+          </p>
         </div>
       )
 
@@ -79,6 +84,17 @@ export function StatusView({
         </Badge>
       )
 
+    case 'needs-key':
+      return (
+        <Badge
+          variant="outline"
+          className="gap-1.5 py-1 font-normal text-muted-foreground"
+        >
+          <KeyRound className="size-3.5" />
+          Add your API key above to use this model.
+        </Badge>
+      )
+
     case 'extracting':
       return (
         <Status
@@ -89,7 +105,43 @@ export function StatusView({
       )
 
     case 'summarizing': {
-      const { phase, done, total, partials } = state
+      const { phase, done, total, partials, streamingText } = state
+      // Cloud streaming: show the answer typing in as raw text (parsed to a clean layout on done).
+      if (typeof streamingText === 'string') {
+        const { estTokens, estCostUsd } = state
+        return (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Spinner />
+                <h2 className="text-[15px] font-semibold">
+                  Summarizing the article…
+                </h2>
+              </div>
+              {estTokens !== undefined && (
+                <span
+                  className="shrink-0 text-xs text-muted-foreground"
+                  title="Estimated for this run — cancel below if it's too much. Actual shows on completion."
+                >
+                  ~{formatTokens(estTokens)}
+                  {estCostUsd !== undefined
+                    ? ` · ~${formatCost(estCostUsd)}`
+                    : ''}
+                </span>
+              )}
+            </div>
+            {streamingText ? (
+              <pre className="rounded-md border border-border bg-muted/40 p-3 font-mono text-xs leading-relaxed wrap-break-word whitespace-pre-wrap text-muted-foreground">
+                {streamingText}
+              </pre>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Waiting for the provider…
+              </p>
+            )}
+          </div>
+        )
+      }
       const hasProgress = typeof total === 'number' && total > 0
       const pct = hasProgress
         ? Math.round(((done ?? 0) / total) * 100)

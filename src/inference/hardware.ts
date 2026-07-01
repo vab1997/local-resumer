@@ -12,7 +12,7 @@
  *
  * Every number this produces is an ESTIMATE; `isEstimate` is always true and the UI says so.
  */
-import type { ModelSpec } from '@/src/shared/models'
+import type { LocalModelSpec } from '@/src/shared/models'
 
 export type HardwareClass =
   | 'apple-silicon-unified'
@@ -263,7 +263,7 @@ export interface Feasibility {
  * `too-heavy` stays selectable (warn-but-allow). All reasons carry "(est.)" to stay honest.
  */
 export function assessFeasibility(
-  spec: ModelSpec,
+  spec: LocalModelSpec,
   hw: HardwareProfile
 ): Feasibility {
   if (!hw.webgpu) {

@@ -1,5 +1,11 @@
+import {
+  createCloudBackend,
+  estimateCost,
+  estimateTokens
+} from '@/src/inference/cloud'
 import { parseSummary } from '@/src/inference/parse'
 import type { WorkerEvent, WorkerRequest } from '@/src/shared/messages'
+import { getModelSpec, isCloudModel } from '@/src/shared/models'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   extractActiveTabArticle,
@@ -15,14 +21,21 @@ interface Progress {
 }
 
 /**
- * Owns the inference worker and orchestrates one summarize run end-to-end. The worker handles
- * single-pass vs chunked map-reduce internally; this hook sends the full article, tracks progress
- * / partials, measures wall-clock time, and supports cancellation.
+ * Owns the active inference backend and orchestrates one summarize run end-to-end.
  *
- * The worker is loaded for one model. Switching `selectedModelId` recreates the worker — terminating
- * the old one drops its WebGPU device and reclaims all VRAM (the reliable way to swap models).
+ * Two backends, selected by the active model's `kind`:
+ *  - **local** — a Web Worker (recreated per model; terminating it frees VRAM). Decides single-pass
+ *    vs chunked map-reduce internally; this hook tracks progress / partials. Non-streaming.
+ *  - **cloud** — a provider call via the AI SDK on this thread (no worker). Single-pass, streaming.
+ *    Needs the provider's API key; without one the panel sits in `needs-key`.
+ *
+ * `apiKey` is the key for the *selected cloud model's* provider (the panel resolves it); it's
+ * `undefined` while loading, `null` when absent, and ignored entirely for local models.
  */
-export function useSummarize(selectedModelId: string | undefined) {
+export function useSummarize(
+  selectedModelId: string | undefined,
+  apiKey: string | null | undefined
+) {
   const [state, setState] = useState<SummaryState>({
     status: 'checking-backend'
   })
@@ -39,15 +52,32 @@ export function useSummarize(selectedModelId: string | undefined) {
     new Map()
   )
   const lastPctRef = useRef(-1)
+  // Cloud run state: an AbortController to cancel the stream, and a guard so a stale resolution
+  // (after cancel or model swap) can't land a result.
+  const abortRef = useRef<AbortController | null>(null)
+  const cloudRunRef = useRef<symbol | null>(null)
+
+  const spec = selectedModelId ? getModelSpec(selectedModelId) : undefined
+  const isCloud = spec ? isCloudModel(spec) : false
+
+  // Reset the run state to a neutral status whenever the model changes — the React-sanctioned
+  // "adjust state when a prop changes" pattern (done in render, not an effect). This clears a stale
+  // summary on every swap; the local worker lifecycle or the cloud derivation below then takes over.
+  // Swaps are blocked while busy, so this never interrupts a run.
+  const [lastModelId, setLastModelId] = useState(selectedModelId)
+  if (selectedModelId !== lastModelId) {
+    setLastModelId(selectedModelId)
+    setState({ status: 'checking-backend' })
+  }
 
   // Show the selected model's last measured size immediately (cache loads may not re-emit byte
-  // progress). Re-runs on model change so the badge reflects the active model.
+  // progress). Re-runs on model change so the badge reflects the active model. Cloud models have no
+  // cached size, so this clears the badge for them.
   useEffect(() => {
     if (!selectedModelId) return
     const key = modelCacheKey(selectedModelId)
     chrome.storage.local.get(key).then((stored) => {
       const size = stored[key]
-      // Set to the cached size, or clear it for a model that hasn't been downloaded yet.
       setModelSizeBytes(typeof size === 'number' && size > 0 ? size : undefined)
     })
   }, [selectedModelId])
@@ -63,10 +93,12 @@ export function useSummarize(selectedModelId: string | undefined) {
     })
   }, [])
 
+  // --- Local backend: the Web Worker (only for local models) -----------------------------------
   useEffect(() => {
     // Wait until the persisted model choice has resolved before creating the worker (avoids
-    // loading the default and immediately swapping it).
+    // loading the default and immediately swapping it). Cloud models never get a worker.
     if (!selectedModelId) return
+    if (isCloudModel(getModelSpec(selectedModelId))) return
 
     // Fresh worker for this model. Reset all download accumulators so a swap doesn't mix the new
     // model's progress with the previous model's file entries. State is reset by the new worker's
@@ -197,26 +229,99 @@ export function useSummarize(selectedModelId: string | undefined) {
     }
   }, [renderSummarizing, selectedModelId])
 
-  const summarize = useCallback(async () => {
-    const worker = workerRef.current
-    if (!worker) return
+  const runCloud = useCallback(
+    async (text: string) => {
+      if (!spec || !isCloudModel(spec) || !apiKey) return
+      const backend = createCloudBackend(spec, apiKey)
+      const controller = new AbortController()
+      abortRef.current = controller
+      const runId = Symbol('cloud-run')
+      cloudRunRef.current = runId
 
+      // Pre-run estimate so the user can cancel before spending if it looks like a lot. Input tokens
+      // from the article length; output guessed at a typical summary size (the real cost lands on done).
+      const estInputTokens = estimateTokens(text)
+      const OUTPUT_GUESS_TOKENS = 700
+      const estTokens = estInputTokens + OUTPUT_GUESS_TOKENS
+      const estCostUsd = estimateCost(spec, estInputTokens, OUTPUT_GUESS_TOKENS)
+
+      setState({
+        status: 'summarizing',
+        streamingText: '',
+        estTokens,
+        estCostUsd
+      })
+      try {
+        const result = await backend.summarize(text, {
+          signal: controller.signal,
+          onDelta: (full) => {
+            if (cloudRunRef.current !== runId) return
+            setState({
+              status: 'summarizing',
+              streamingText: full,
+              estTokens,
+              estCostUsd
+            })
+          }
+        })
+        if (cloudRunRef.current !== runId) return
+        const source = sourceRef.current
+        if (!source) return
+        setState({
+          status: 'done',
+          summary: parseSummary(result.raw),
+          source,
+          capped: result.capped,
+          elapsedMs: performance.now() - startTimeRef.current,
+          tokens: result.tokens,
+          costUsd: result.costUsd
+        })
+      } catch (err) {
+        if (cloudRunRef.current !== runId) return
+        if (controller.signal.aborted) {
+          setState({ status: 'ready' })
+        } else {
+          setState({
+            status: 'error',
+            message: err instanceof Error ? err.message : String(err)
+          })
+        }
+      } finally {
+        if (cloudRunRef.current === runId) cloudRunRef.current = null
+        if (abortRef.current === controller) abortRef.current = null
+      }
+    },
+    [spec, apiKey]
+  )
+
+  const summarize = useCallback(async () => {
+    if (isCloud && !apiKey) {
+      if (spec && isCloudModel(spec)) {
+        setState({ status: 'needs-key', provider: spec.provider })
+      }
+      return
+    }
     setState({ status: 'extracting' })
     try {
       const article = await extractActiveTabArticle()
-
       sourceRef.current = {
         tabId: article.tabId,
         url: article.url,
         title: article.title
       }
+      startTimeRef.current = performance.now()
 
+      if (isCloud) {
+        await runCloud(article.textContent)
+        return
+      }
+
+      const worker = workerRef.current
+      if (!worker) return
       const requestId = crypto.randomUUID()
       requestIdRef.current = requestId
-      startTimeRef.current = performance.now()
       partialsRef.current = []
       progressRef.current = undefined
-
       renderSummarizing()
       worker.postMessage({
         type: 'SUMMARIZE',
@@ -230,14 +335,40 @@ export function useSummarize(selectedModelId: string | undefined) {
           : String(err)
       setState({ status: 'error', message })
     }
-  }, [renderSummarizing])
+  }, [isCloud, apiKey, spec, renderSummarizing, runCloud])
 
   const cancel = useCallback(() => {
+    // Cloud: abort the stream (the run's catch lands in ready).
+    if (abortRef.current) {
+      abortRef.current.abort()
+      return
+    }
+    // Local: ask the worker to stop (it replies CANCELLED).
     const worker = workerRef.current
     const requestId = requestIdRef.current
     if (!worker || !requestId) return
     worker.postMessage({ type: 'CANCEL', requestId } satisfies WorkerRequest)
   }, [])
 
-  return { state, summarize, cancel, modelSizeBytes }
+  // Cloud has no async lifecycle while idle — its readiness is purely "is the key present?". Derive
+  // the idle statuses (don't store them, to avoid setState-in-effect); leave active-run statuses and
+  // any local statuses untouched.
+  let effectiveState = state
+  if (spec && isCloudModel(spec)) {
+    if (
+      state.status === 'checking-backend' ||
+      state.status === 'ready' ||
+      state.status === 'needs-key'
+    ) {
+      if (apiKey === undefined) {
+        effectiveState = { status: 'checking-backend' }
+      } else if (apiKey === null) {
+        effectiveState = { status: 'needs-key', provider: spec.provider }
+      } else {
+        effectiveState = { status: 'ready' }
+      }
+    }
+  }
+
+  return { state: effectiveState, summarize, cancel, modelSizeBytes }
 }

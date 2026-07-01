@@ -6,7 +6,12 @@
  * themselves overflow. Passes run sequentially on purpose — the GPU is the bottleneck.
  */
 import type { WorkerEvent, WorkerRequest } from '@/src/shared/messages'
-import { DEFAULT_MODEL_ID, getModelSpec } from '@/src/shared/models'
+import {
+  DEFAULT_MODEL_ID,
+  getModelSpec,
+  isLocalModel,
+  type LocalModelSpec
+} from '@/src/shared/models'
 import {
   env,
   InterruptableStoppingCriteria,
@@ -51,7 +56,18 @@ function post(msg: WorkerEvent): void {
 let generatorPromise: Promise<TextGenerationPipeline> | null = null
 // The model this worker loads. Set on LOAD_MODEL; a different model = a different worker, so this
 // is effectively constant for the worker's lifetime (the orchestrator recreates the worker to swap).
+// The worker only ever runs local models — cloud models never reach it (the orchestrator routes
+// them to CloudBackend and never creates a worker).
 let currentModelId = DEFAULT_MODEL_ID
+
+/** The active model's local spec. Cloud models never reach the worker, so this always resolves. */
+function activeLocalSpec(): LocalModelSpec {
+  const spec = getModelSpec(currentModelId)
+  if (!isLocalModel(spec)) {
+    throw new Error(`Worker loaded with a non-local model: ${currentModelId}`)
+  }
+  return spec
+}
 
 // Cancellation state. A fresh InterruptableStoppingCriteria per pass; CANCEL interrupts it and
 // flips `cancelled`, which the orchestrator checks between passes.
@@ -61,7 +77,7 @@ let stopper: InterruptableStoppingCriteria | null = null
 
 function loadModel(): Promise<TextGenerationPipeline> {
   if (!generatorPromise) {
-    const spec = getModelSpec(currentModelId)
+    const spec = activeLocalSpec()
     generatorPromise = pipeline('text-generation', spec.id, {
       device: 'webgpu',
       dtype: spec.runtime.dtype,
@@ -87,7 +103,7 @@ function loadModel(): Promise<TextGenerationPipeline> {
  * also strips any stray `<think>` block as a safety net.
  */
 function applyThinkingControl(messages: PromptMessage[]): PromptMessage[] {
-  if (!getModelSpec(currentModelId).runtime.disableThinking) return messages
+  if (!activeLocalSpec().runtime.disableThinking) return messages
   return messages.map((m) =>
     m.role === 'system' ? { ...m, content: `${m.content}\n/no_think` } : m
   )

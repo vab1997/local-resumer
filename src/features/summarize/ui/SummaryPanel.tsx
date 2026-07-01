@@ -1,14 +1,16 @@
 import { Button } from '@/src/components/ui/button'
 import { TooltipProvider } from '@/src/components/ui/tooltip'
 import { cn } from '@/src/lib/utils'
-import { getModelSpec } from '@/src/shared/models'
+import { getModelSpec, isCloudModel } from '@/src/shared/models'
 import { Sparkles } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import { canSummarize, isBusy, type SummaryState } from '../state'
 import { useActiveTabUrl } from '../useActiveTabUrl'
 import { useHardwareProfile } from '../useHardwareProfile'
 import { useCachedModelIds, useModelSelection } from '../useModelSelection'
+import { useProviderApiKey } from '../useProviderSettings'
 import { useSummarize } from '../useSummarize'
+import { CloudKeyPanel } from './CloudKeyPanel'
 import { HardwareInfoBar } from './HardwareInfoBar'
 import { ModelCard } from './ModelCard'
 import { ModelSelector } from './ModelSelector'
@@ -38,6 +40,8 @@ function statusLabel(status: SummaryState['status']): string {
       return 'Downloading model…'
     case 'ready':
       return 'Ready'
+    case 'needs-key':
+      return 'API key needed'
     case 'extracting':
       return 'Reading article…'
     case 'summarizing':
@@ -56,8 +60,13 @@ export function SummaryPanel() {
   const { selectedModelId, setSelectedModelId } = useModelSelection()
   const hardware = useHardwareProfile()
   const cachedIds = useCachedModelIds()
-  const { state, summarize, cancel, modelSizeBytes } =
-    useSummarize(selectedModelId)
+  const activeSpec = getModelSpec(selectedModelId ?? '')
+  const cloud = isCloudModel(activeSpec) ? activeSpec : undefined
+  const { apiKey, setApiKey, clearApiKey } = useProviderApiKey(cloud?.provider)
+  const { state, summarize, cancel, modelSizeBytes } = useSummarize(
+    selectedModelId,
+    apiKey
+  )
   const activeUrl = useActiveTabUrl()
 
   const isStale =
@@ -65,7 +74,6 @@ export function SummaryPanel() {
     activeUrl !== undefined &&
     activeUrl !== state.source.url
   const busy = isBusy(state)
-  const activeSpec = getModelSpec(selectedModelId ?? '')
 
   return (
     <TooltipProvider delayDuration={250}>
@@ -83,8 +91,8 @@ export function SummaryPanel() {
         </header>
 
         <main className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-          {/* Hardware + model selection stay visible in every state. */}
-          <HardwareInfoBar hardware={hardware} />
+          {/* Hardware bar is local-only (cloud doesn't run on the GPU). Model selection always shows. */}
+          {!cloud && <HardwareInfoBar hardware={hardware} />}
           <ModelSelector
             selectedModelId={selectedModelId ?? activeSpec.id}
             onSelect={setSelectedModelId}
@@ -92,6 +100,15 @@ export function SummaryPanel() {
             cachedIds={cachedIds}
             disabled={busy}
           />
+          {cloud && (
+            <CloudKeyPanel
+              provider={cloud.provider}
+              hasKey={!!apiKey}
+              disabled={busy}
+              onSave={(value) => void setApiKey(value)}
+              onClear={() => void clearApiKey()}
+            />
+          )}
           <ModelCard spec={activeSpec} modelSizeBytes={modelSizeBytes} />
 
           {/* Keyed on status so each state crossfades in on change (not on every progress tick). */}
@@ -104,6 +121,7 @@ export function SummaryPanel() {
                   capped={state.capped}
                   elapsedMs={state.elapsedMs}
                   tokens={state.tokens}
+                  costUsd={state.costUsd}
                   stale={isStale}
                   currentUrl={activeUrl}
                 />

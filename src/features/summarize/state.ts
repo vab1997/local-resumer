@@ -1,3 +1,4 @@
+import type { CloudProvider } from '@/src/shared/models'
 import type { Summary } from '@/src/shared/types'
 
 /** The page a summary was produced for. */
@@ -22,6 +23,8 @@ export type SummaryState =
       totalBytes?: number
     }
   | { status: 'ready' }
+  /** A cloud model is selected but its provider has no stored API key — block until the user adds one. */
+  | { status: 'needs-key'; provider: CloudProvider }
   | { status: 'extracting' }
   | {
       status: 'summarizing'
@@ -29,6 +32,11 @@ export type SummaryState =
       done?: number
       total?: number
       partials?: string[]
+      /** Cloud streaming: the raw text so far (shown typing in before it's parsed on done). */
+      streamingText?: string
+      /** Cloud: estimated tokens + USD for THIS run, shown live so the user can cancel if it's a lot. */
+      estTokens?: number
+      estCostUsd?: number
     }
   | {
       status: 'done'
@@ -39,6 +47,8 @@ export type SummaryState =
       /** Wall-clock ms from click to result, and total tokens processed — run-metrics badges. */
       elapsedMs: number
       tokens: number
+      /** Estimated USD cost (cloud runs only; undefined for local). */
+      costUsd?: number
     }
   | { status: 'error'; message: string }
 

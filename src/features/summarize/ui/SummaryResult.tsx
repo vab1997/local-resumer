@@ -1,9 +1,9 @@
 import { Badge } from '@/src/components/ui/badge'
 import { Button } from '@/src/components/ui/button'
 import type { Summary } from '@/src/shared/types'
-import { Clock, Download, Hash } from 'lucide-react'
+import { Clock, Download, Hash, Wallet } from 'lucide-react'
 import Markdown from 'react-markdown'
-import { formatDuration, formatTokens } from '../format'
+import { formatCost, formatDuration, formatTokens } from '../format'
 import { summaryToFilename, summaryToMarkdown } from '../markdown'
 import type { SummarySource } from '../state'
 
@@ -28,6 +28,7 @@ export function SummaryResult({
   capped,
   elapsedMs,
   tokens,
+  costUsd,
   stale,
   currentUrl
 }: {
@@ -36,6 +37,7 @@ export function SummaryResult({
   capped: boolean
   elapsedMs: number
   tokens: number
+  costUsd?: number
   stale: boolean
   currentUrl?: string
 }) {
@@ -140,6 +142,15 @@ export function SummaryResult({
           <Hash className="size-3" />
           {formatTokens(tokens)}
         </Badge>
+        {costUsd !== undefined && (
+          <Badge
+            variant="outline"
+            className="gap-1 font-normal text-muted-foreground"
+          >
+            <Wallet className="size-3" />
+            {formatCost(costUsd)}
+          </Badge>
+        )}
       </div>
 
       <footer className="mt-1 flex items-center justify-between gap-3 border-t border-border pt-3">
