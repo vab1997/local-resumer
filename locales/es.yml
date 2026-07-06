@@ -1,0 +1,118 @@
+# Mensajes en español. Mismo árbol de keys que en.yml (en es el fallback).
+
+extName: Local Resumer
+extDescription: Resume el artículo actual con un modelo de IA que corre localmente en tu navegador.
+actionTitle: Abrir Local Resumer
+
+status:
+  checking: Verificando dispositivo…
+  downloading: Descargando modelo…
+  ready: Listo
+  needsKey: Falta API key
+  extracting: Leyendo artículo…
+  summarizing: Resumiendo…
+  error: Error
+  unsupported: No soportado
+
+footer:
+  summarize: Resumir esta página
+  summarizeAgain: Resumir de nuevo
+  working: Trabajando…
+  cancel: Cancelar
+
+checking:
+  title: Verificando tu dispositivo…
+  detail: Comprobando soporte de WebGPU.
+
+unsupported:
+  title: Dispositivo aún no soportado
+  intro: 'Local Resumer ejecuta el modelo en tu GPU vía WebGPU. Para habilitarlo:'
+  cloudHint: ¿Sin WebGPU? Elegí un modelo Cloud arriba — corren en un proveedor con tu API key y no necesitan WebGPU (el texto del artículo se envía al proveedor).
+  step1: 'Activá la aceleración por hardware: Configuración → Sistema → "Usar aceleración por hardware".'
+  step2: Actualizá el navegador a la última versión y reinicialo.
+  step3: '¿Sigue sin andar? Activá el flag en'
+
+downloading:
+  title: Descargando el modelo…
+  note: Solo la primera vez — queda en caché.
+  starting: Iniciando…
+
+readyHint: Abrí un artículo y después resumilo.
+needsKeyHint: Agregá tu API key arriba para usar este modelo.
+
+extracting:
+  title: Leyendo el artículo…
+  detail: Extrayendo el contenido principal.
+
+errorTitle: Algo salió mal
+
+summarizing:
+  title: Resumiendo el artículo…
+  short: Resumiendo…
+  combining: Combinando el resumen…
+  waitingProvider: Esperando al proveedor…
+  runningLocal: Ejecutando el modelo localmente en tu GPU.
+  chunk: Fragmento
+  combiningLabel: Combinando
+  estimateTitle: Estimado para esta corrida — cancelá abajo si es mucho. El real aparece al terminar.
+
+loading: cargando
+
+keyPanel:
+  privacy: El modo Cloud envía el texto del artículo a $1. Usá un modelo local para que todo quede en tu dispositivo.
+  saved: API key de $1 guardada.
+  delete: Borrar key
+  placeholder: API key de $1
+  save: Guardar
+  showKey: Mostrar key
+  hideKey: Ocultar key
+  stored: Se guarda solo en este navegador. Conseguí una en $1.
+
+openaiAccess:
+  summary: ¿Modelo no habilitado? Revisá tu proyecto de OpenAI
+  intro: 'Si las corridas fallan con "project does not have access to model", habilitá los modelos en tu proyecto de OpenAI:'
+  step1: Abrí el panel de OpenAI en
+  step2: Andá a "Projects" y después "Settings" (normalmente un ícono de engranaje).
+  step3: En "Limits", asegurate de que gpt-4o-mini y gpt-5-mini estén activados.
+  step4: Cerrá el panel de OpenAI y reintentá.
+
+selector:
+  aria: Modelo
+  onDevice: En el dispositivo
+  cloudGroup: Cloud (envía el texto al proveedor)
+  cached: en caché
+  per1M: por 1M
+  memoryWarning: Este modelo puede superar la memoria estimada de tu dispositivo ($1). Igual va a intentar cargarse.
+
+card:
+  cloudBadge: Cloud
+  localBadge: Local · WebGPU
+  per1MTok: por 1M tok
+  cloudDesc: Corre en $1. El texto del artículo se envía al proveedor.
+  localDesc: Lee el artículo en tu GPU. Nada sale de tu dispositivo.
+
+webgpuInfo:
+  aria: Sobre la ejecución local
+  tooltip: Corre íntegramente en tu dispositivo usando WebGPU (tu GPU). El artículo y el resumen nunca salen de tu navegador.
+
+hardware:
+  detecting: Detectando hardware…
+  gpu: GPU
+  vram: VRAM
+  bw: BW
+  ram: RAM
+  cores: Núcleos
+  webgpu: WebGPU
+  noWebgpu: Sin WebGPU
+  disclaimer: Estimaciones basadas en APIs del navegador. Las specs reales pueden variar.
+
+result:
+  stalePrefix: Cambiaste de página. Este resumen es de
+  staleNowOn: — ahora estás en
+  staleSuffix: . Resumí esta página para actualizarlo.
+  capped: Artículo muy largo — se resumió la primera parte.
+  tldr: TL;DR
+  keyPoints: Puntos clave
+  rawNotice: El modelo no devolvió el formato esperado; esta es su salida cruda.
+  download: Descargar .md
+  summaryFor: 'Resumen de:'

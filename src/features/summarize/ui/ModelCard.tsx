@@ -1,3 +1,4 @@
+import { i18n } from '#i18n'
 import { Badge } from '@/src/components/ui/badge'
 import { Card, CardContent } from '@/src/components/ui/card'
 import {
@@ -9,10 +10,6 @@ import { memo } from 'react'
 import { formatBytes } from '../format'
 import { WebGpuInfoTooltip } from './WebGpuInfo'
 
-/**
- * The model/info card, always mounted. Reflects the active (selected) model — local or cloud.
- * Memoized so it only re-renders when the model or its measured size changes.
- */
 export const ModelCard = memo(function ModelCard({
   spec,
   modelSizeBytes
@@ -41,15 +38,17 @@ export const ModelCard = memo(function ModelCard({
           {cloud ? (
             <>
               <Badge variant="outline">
-                {CLOUD_PROVIDER_LABEL[spec.provider]} · Cloud
+                {CLOUD_PROVIDER_LABEL[spec.provider]} ·{' '}
+                {i18n.t('card.cloudBadge')}
               </Badge>
               <Badge variant="outline">
-                ${spec.inputCostPer1M}/${spec.outputCostPer1M} per 1M tok
+                ${spec.inputCostPer1M}/${spec.outputCostPer1M}{' '}
+                {i18n.t('card.per1MTok')}
               </Badge>
             </>
           ) : (
             <>
-              <Badge variant="success">Local · WebGPU</Badge>
+              <Badge variant="success">{i18n.t('card.localBadge')}</Badge>
               {modelSizeBytes ? (
                 <Badge variant="outline">{formatBytes(modelSizeBytes)}</Badge>
               ) : null}
@@ -59,8 +58,8 @@ export const ModelCard = memo(function ModelCard({
 
         <p className="text-sm text-muted-foreground">
           {cloud
-            ? `Runs on ${CLOUD_PROVIDER_LABEL[spec.provider]}. The article text is sent to the provider.`
-            : 'Reads the article on your GPU. Nothing leaves your device.'}
+            ? i18n.t('card.cloudDesc', [CLOUD_PROVIDER_LABEL[spec.provider]])
+            : i18n.t('card.localDesc')}
         </p>
       </CardContent>
     </Card>

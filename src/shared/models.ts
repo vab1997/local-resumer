@@ -18,7 +18,7 @@ export interface ModelRuntimeOptions {
   dtype: DataType
   /**
    * True for reasoning models (SmolLM3) that otherwise prepend a `<think>…</think>` block and
-   * break the XML schema. The worker turns thinking off; parse.ts strips any stray block.
+   * break the output format. The worker turns thinking off; parse.ts strips any stray block.
    */
   disableThinking?: boolean
 }
@@ -88,7 +88,7 @@ export function isCloudModel(spec: ModelSpec): spec is CloudModelSpec {
 }
 
 /**
- * Curated, cross-family local catalog. Llama-3.2-3B is the reference the shared prompt + XML schema
+ * Curated, cross-family local catalog. Llama-3.2-3B is the reference the shared prompt + output schema
  * are tuned to; the others are validated against that same prompt before being trusted.
  */
 export const LOCAL_MODELS: LocalModelSpec[] = [
@@ -104,7 +104,7 @@ export const LOCAL_MODELS: LocalModelSpec[] = [
     license: 'Llama 3.2 Community',
     hasReasoningMode: false,
     promptCompatNote:
-      'Reference model — the prompt and XML schema are tuned to this.',
+      'Reference model — the prompt and output schema are tuned to this.',
     runtime: { dtype: 'q4f16' }
   },
   {
@@ -119,7 +119,7 @@ export const LOCAL_MODELS: LocalModelSpec[] = [
     license: 'Apache-2.0',
     hasReasoningMode: true,
     promptCompatNote:
-      'Reasoning forced off; long context. Re-validate XML adherence.',
+      'Reasoning forced off; long context. Re-validate format adherence.',
     runtime: { dtype: 'q4f16', disableThinking: true }
   },
   {
@@ -134,7 +134,7 @@ export const LOCAL_MODELS: LocalModelSpec[] = [
     license: 'MIT',
     hasReasoningMode: false,
     promptCompatNote:
-      'Different chat template (auto-applied); re-validate XML adherence.',
+      'Different chat template (auto-applied); re-validate format adherence.',
     runtime: { dtype: 'q4f16' }
   },
   {

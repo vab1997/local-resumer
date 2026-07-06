@@ -98,7 +98,7 @@ function loadModel(): Promise<TextGenerationPipeline> {
 
 /**
  * Reasoning-model control. Reasoning models (SmolLM3) otherwise prepend a `<think>…</think>` block
- * that breaks the XML schema. We disable thinking at the chat boundary by adding the `/no_think`
+ * that breaks the output format. We disable thinking at the chat boundary by adding the `/no_think`
  * control token to the system message — the shared prompt text itself is left untouched. parse.ts
  * also strips any stray `<think>` block as a safety net.
  */
@@ -129,20 +129,21 @@ interface PassResult {
 async function runPass(
   generator: TextGenerationPipeline,
   messages: PromptMessage[],
-  maxNewTokens: number,
-  useStopStrings: boolean
+  maxNewTokens: number
 ): Promise<PassResult | null> {
   const tokenizer = generator.tokenizer as unknown as Tokenizer
   messages = applyThinkingControl(messages)
   const inputTokens = countPromptTokens(tokenizer, messages)
 
   stopper = new InterruptableStoppingCriteria()
+  // Markdown output has no closing tag to stop on (the XML-era `</points>` stop string is gone);
+  // generation ends on EOS, bounded by max_new_tokens. If a small model regresses into repeating
+  // the output, reintroduce a closing sentinel here.
   const options: Record<string, unknown> = {
     max_new_tokens: maxNewTokens,
     do_sample: false,
     stopping_criteria: stopper
   }
-  if (useStopStrings) options.stop_strings = ['</points>']
 
   const output = await generator(messages as never, options as never)
   if (cancelled) return null
@@ -193,8 +194,7 @@ async function summarize(
     const pass = await runPass(
       generator,
       buildMessages(fullText),
-      REDUCE_MAX_NEW_TOKENS,
-      true
+      REDUCE_MAX_NEW_TOKENS
     )
     if (!pass || stop()) return void post({ type: 'CANCELLED', requestId })
     post({
@@ -225,8 +225,7 @@ async function summarize(
     const pass = await runPass(
       generator,
       buildMapMessages(chunks[i], { index: i + 1, total: chunks.length }),
-      MAP_MAX_NEW_TOKENS,
-      false
+      MAP_MAX_NEW_TOKENS
     )
     if (!pass || stop()) return void post({ type: 'CANCELLED', requestId })
     totalTokens += pass.tokens
@@ -269,8 +268,7 @@ async function summarize(
           index: j + 1,
           total: batches.length
         }),
-        MAP_MAX_NEW_TOKENS,
-        false
+        MAP_MAX_NEW_TOKENS
       )
       if (!pass || stop()) return void post({ type: 'CANCELLED', requestId })
       totalTokens += pass.tokens
@@ -300,8 +298,7 @@ async function summarize(
   const final = await runPass(
     generator,
     buildReduceMessages(notes.join('\n\n'), minPoints, maxPoints),
-    REDUCE_MAX_NEW_TOKENS,
-    true
+    REDUCE_MAX_NEW_TOKENS
   )
   if (!final || stop()) return void post({ type: 'CANCELLED', requestId })
   totalTokens += final.tokens

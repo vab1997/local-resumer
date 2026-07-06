@@ -21,6 +21,8 @@ key points) lives in the browser **side panel**, with one-click `.md` export.
 - **Vercel AI SDK** (`ai` + `@ai-sdk/openai` + `@ai-sdk/anthropic`) — cloud inference (v6), kept
   strictly behind `CloudBackend`. **zod** — validate persisted settings.
 - **Tailwind v4 + shadcn** (Radix primitives) · **react-markdown** (render) · **lucide-react** (icons).
+- **@wxt-dev/i18n** (v8) — UI labels follow the browser's UI language (`locales/en.yml` + `es.yml`,
+  en = `default_locale`/fallback; typed keys via `i18n.t()`, manifest name/description localized).
 - **@mozilla/readability** (article extraction).
 - **Prettier** (`semi:false`, single quotes, `trailingComma:none`, organize-imports + tailwindcss) ·
   **ESLint** (flat config).
@@ -36,7 +38,7 @@ contract → **`src/shared/messages.ts`** (read this to understand the boundarie
 | Inference Web Worker | `src/inference/inference.worker.ts`                 | LOCAL backend: loads model once; single-pass vs chunked map-reduce; off UI thread        |
 | Cloud backend        | `src/inference/cloud.ts`                            | CLOUD backend (v6): provider call via AI SDK on the panel thread; single-pass, streaming |
 | Content script       | `entrypoints/content.ts`                            | Readability extraction on demand → clean text                                            |
-| Background SW        | `entrypoints/background.ts`                         | Opens the side panel                                                                     |
+| Background SW        | `entrypoints/background.ts`                         | Scopes + opens the side panel per tab (v8)                                               |
 
 The two backends share one shape (`src/inference/inference-backend.ts`). **`useSummarize` (v7) is a
 thin selector** over two backend hooks — `useLocalBackend` (worker) and `useCloudBackend` (cloud) —
@@ -55,7 +57,7 @@ thin `useSummarize`, `run.ts`, UI), `src/inference` (worker, chunk, tokenizer, p
 backend, cloud, cloud-estimate), `src/components/ui` (shadcn), `src/shared` (messages, types).
 
 Key inference files: `prompt.ts` (single / map / reduce prompts), `chunk.ts` (token-accurate
-chunking), `tokenizer.ts` (token counting), `parse.ts` (XML → summary).
+chunking), `tokenizer.ts` (token counting), `parse.ts` (Markdown → summary).
 
 ## Durable invariants & decisions
 
@@ -73,11 +75,24 @@ chunking), `tokenizer.ts` (token counting), `parse.ts` (XML → summary).
   via `scripts/copy-ort.mjs`) — CSP blocks CDN fetches; `connect-src https://*.hf.co` is required.
 - **Tab-bound summaries**: a summary is pinned to its source tab/url; stale detection warns when you
   switch pages. Generation is **stateless** per run.
-- **Output schema**: model emits `<title>/<result>/<points>`; `parse.ts` reads it with a **raw
-  fallback** (never a blank panel). Point count is NOT fixed in the system prompt — each call states
-  it (single-pass 3–5; reduce scales to length).
+- **Output schema (v8: Markdown, was XML)**: model emits `# title` + TL;DR paragraph +
+  `- **heading** — detail` bullets; `parse.ts` reads it with a **raw fallback** (never a blank
+  panel). Chosen over XML for a clean cloud-streaming view (closed old issue #11) — parse cost was
+  never the issue (µs). The worker's `</points>` stop-string is gone; generation ends on
+  EOS/`max_new_tokens` (if a small model regresses into repetition, reintroduce a closing
+  sentinel). Point count is NOT fixed in the system prompt — each call states it (single-pass 3–5;
+  reduce scales to length).
+- **Per-tab side panel (v8)**: the panel is disabled globally and enabled per tab on toolbar click
+  (`action.onClicked` → `sidePanel.setOptions({tabId}) + open()`; `setPanelBehavior` removed).
+  Chrome hides it on other tabs and re-shows it on return. NOTE: whether the panel document
+  survives while hidden (worker/state/in-flight run) is **unverified** — spike C.0 in the v8 plan;
+  if it's destroyed, decide plan C.2 (persist `done` state to `storage.session` vs revert).
+- **i18n (v8)**: UI labels only, via `@wxt-dev/i18n` (en fallback + es). User-facing ERROR strings
+  from `extract.ts`/`content.ts`/worker/`cloud.ts` are still English — deferred (they cross
+  contexts as formed strings; chrome.i18n is available there, it's just volume). Summary language
+  is the article's (prompt rule), untouched.
 - **Long articles**: worker tokenizes the full text → single pass (short) or **map-reduce** (long):
-  per-chunk notes (lean map prompt) → reduce into final XML, recursively if notes overflow. Passes
+  per-chunk notes (lean map prompt) → reduce into the final Markdown, recursively if notes overflow. Passes
   run sequentially (GPU-bound). **Per-token cancel** via `InterruptableStoppingCriteria`.
 - **Run metrics**: elapsed time + total tokens shown as badges.
 - **User-selectable model** (v5): a curated ONNX **q4f16** registry (`src/shared/models.ts`); the
@@ -87,15 +102,16 @@ chunking), `tokenizer.ts` (token counting), `parse.ts` (XML → summary).
 
 ## Iteration history (rationale lives in the plans)
 
-| It. | What                                                                                                                                                                                           | Plan                                               |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| v1  | Scaffold; side panel; WebGPU inference; title + TL;DR; tab-binding                                                                                                                             | `docs/plans/v1-local-resumer-plan.md`              |
-| v2  | Key points; `.md` export; semantic-XML prompt + one-shot example; **1B → 3B** model escalation                                                                                                 | `docs/plans/v2-richer-summary-md-export.md`        |
-| v3  | UI redesign (Tailwind v4 + shadcn, model card, badges, motion); Prettier + ESLint; perf (lazy-load, throttle, memo)                                                                            | `docs/plans/v3-improvement-ui-and-optimize-app.md` |
-| v4  | Long articles via **chunk + map-reduce**; per-token cancel; run-metrics badges; richer scaled points                                                                                           | `docs/plans/v4-long-articles-chunk-mapreduce.md`   |
-| v5  | **Model selector** (registry) + **hardware feasibility** bar; per-model swap via worker recreation; same prompt all models                                                                     | `docs/plans/v5-model-selector-hardware.md`         |
-| v6  | **Cloud providers** (OpenAI + Anthropic) via Vercel AI SDK; `InferenceBackend` abstraction; ModelSpec union (local/cloud); per-provider keys; streaming; cost badge; WebGPU gate → local-level | `docs/plans/v6-cloud-providers.md`                 |
-| v7  | **Optimization**: lazy cloud stack (AI SDK `import()`-ed only on a cloud run → eager panel 882 → 343 kB); `zod` out of eager bundle; `useSummarize` split into `useLocalBackend` + `useCloudBackend` + `run.ts`; `StatusView` split; render-perf assessed + skipped (worker-bound)         | `docs/plans/v7-optimization.md`                   |
+| It. | What                                                                                                                                                                                                                                                                               | Plan                                                                |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| v1  | Scaffold; side panel; WebGPU inference; title + TL;DR; tab-binding                                                                                                                                                                                                                 | `docs/plans/v1-local-resumer-plan.md`                               |
+| v2  | Key points; `.md` export; semantic-XML prompt + one-shot example; **1B → 3B** model escalation                                                                                                                                                                                     | `docs/plans/v2-richer-summary-md-export.md`                         |
+| v3  | UI redesign (Tailwind v4 + shadcn, model card, badges, motion); Prettier + ESLint; perf (lazy-load, throttle, memo)                                                                                                                                                                | `docs/plans/v3-improvement-ui-and-optimize-app.md`                  |
+| v4  | Long articles via **chunk + map-reduce**; per-token cancel; run-metrics badges; richer scaled points                                                                                                                                                                               | `docs/plans/v4-long-articles-chunk-mapreduce.md`                    |
+| v5  | **Model selector** (registry) + **hardware feasibility** bar; per-model swap via worker recreation; same prompt all models                                                                                                                                                         | `docs/plans/v5-model-selector-hardware.md`                          |
+| v6  | **Cloud providers** (OpenAI + Anthropic) via Vercel AI SDK; `InferenceBackend` abstraction; ModelSpec union (local/cloud); per-provider keys; streaming; cost badge; WebGPU gate → local-level                                                                                     | `docs/plans/v6-cloud-providers.md`                                  |
+| v7  | **Optimization**: lazy cloud stack (AI SDK `import()`-ed only on a cloud run → eager panel 882 → 343 kB); `zod` out of eager bundle; `useSummarize` split into `useLocalBackend` + `useCloudBackend` + `run.ts`; `StatusView` split; render-perf assessed + skipped (worker-bound) | `docs/plans/v7-optimization.md`                                     |
+| v8  | **Markdown output** (XML schema out; parse.ts rewritten; stop-strings gone); **OpenAI model-access guide** (collapsible in CloudKeyPanel); **per-tab side panel** (spike pending); **i18n labels** (@wxt-dev/i18n, en+es)                                                          | `docs/plans/v8-markdown-output-openai-notice-per-tab-panel-i18n.md` |
 
 ## Current state & deferred
 
@@ -136,9 +152,23 @@ worker, not renders, so the Vercel render-path rules have ~0 ROI here. **Pending
 cloud chunk is fetched only on the first cloud run, and that local/cloud runs + cancel + swap still
 behave (see `docs/plans/v7-optimization.md`).
 
+**v8 (built + type/lint/build-clean, browser QA pending):** Markdown output end-to-end (prompt
+example + `<output-formatting>` rewritten; `parse.ts` is a Markdown parser with the same `Summary`
+shape + raw fallback, unit-smoke-tested via esbuild; worker `stop_strings`/`useStopStrings` removed);
+OpenAI model-access guide (collapsible `<details>` in `CloudKeyPanel`, provider=openai only); i18n
+labels (85 keys, en+es, manifest localized; the tsconfig gotcha: local `paths` replaces the extended
+`.wxt` paths, so `#i18n` is re-declared in `tsconfig.json`); per-tab side panel wired in
+`background.ts`. **Pending QA (blocking):** spike C.0 — does the hidden panel document survive a tab
+switch (state + in-flight run)? If not → plan C.2 decision. Format matrix: re-validate the 4 local
+models under the Markdown schema (the `</points>` stop-string safety net is gone — watch for
+repetition on the 1B) + one cloud run (clean streaming, closed #11). Verify Chrome-in-Spanish shows
+Spanish labels.
+
 **Deferred:** WASM fallback (for non-WebGPU devices); Firefox polish; **KV/prefix-cache reuse across
 passes** (separate spike — unconfirmed in Transformers.js + onnxruntime-web); Vercel review findings
-D (drop `forwardRef`), E (hoist regex), F (lucide deep imports).
+D (drop `forwardRef`), E (hoist regex), F (lucide deep imports); **`GET /v1/models` validation at
+key-entry** (the definitive fix for per-account model access — the v8 guide is the stopgap);
+**i18n for cross-context error strings** (extract/content/worker/cloud).
 
 ## Commands
 

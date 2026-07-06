@@ -4,7 +4,10 @@
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      // Local `paths` replaces (not merges) the extended .wxt/tsconfig paths, so the i18n
+      // alias must be re-declared here.
+      "#i18n": ["./.wxt/i18n/index.ts"]
     }
   }
 }

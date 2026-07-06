@@ -1,3 +1,4 @@
+import { i18n } from '#i18n'
 import {
   Select,
   SelectContent,
@@ -23,7 +24,6 @@ import {
 } from '@/src/shared/models'
 import { AlertTriangle } from 'lucide-react'
 
-/** Text colour per feasibility tier (no destructive badge variant exists; colour the label). */
 function tierClass(tier: FeasibilityTier): string {
   switch (tier) {
     case 'recommended':
@@ -36,7 +36,6 @@ function tierClass(tier: FeasibilityTier): string {
   }
 }
 
-/** A local row: name · (cached | download size) · feasibility for the detected hardware. */
 function LocalRow({
   spec,
   hardware,
@@ -51,7 +50,7 @@ function LocalRow({
     <span className="flex w-full items-center justify-between gap-3">
       <span className="font-medium">{spec.label}</span>
       <span className="text-xs text-muted-foreground">
-        {cached ? 'cached' : `${spec.downloadGB} GB`}
+        {cached ? i18n.t('selector.cached') : `${spec.downloadGB} GB`}
         {feas ? (
           <>
             {' · '}
@@ -63,13 +62,13 @@ function LocalRow({
   )
 }
 
-/** A cloud row: name · list price (no hardware feasibility — it runs on the provider). */
 function CloudRow({ spec }: { spec: CloudModelSpec }) {
   return (
     <span className="flex w-full items-center justify-between gap-3">
       <span className="font-medium">{spec.label}</span>
       <span className="text-xs text-muted-foreground">
-        ${spec.inputCostPer1M}/${spec.outputCostPer1M} per 1M
+        ${spec.inputCostPer1M}/${spec.outputCostPer1M}{' '}
+        {i18n.t('selector.per1M')}
       </span>
     </span>
   )
@@ -84,10 +83,6 @@ interface ModelSelectorProps {
   disabled: boolean
 }
 
-/**
- * Model picker, grouped into On-device and Cloud. Local rows show size + feasibility for the
- * detected hardware (over-budget picks are warned about but never blocked). Cloud rows show price.
- */
 export function ModelSelector({
   selectedModelId,
   onSelect,
@@ -108,12 +103,12 @@ export function ModelSelector({
         onValueChange={onSelect}
         disabled={disabled}
       >
-        <SelectTrigger aria-label="Model">
+        <SelectTrigger aria-label={i18n.t('selector.aria')}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-black">
           <SelectGroup>
-            <SelectLabel>On-device</SelectLabel>
+            <SelectLabel>{i18n.t('selector.onDevice')}</SelectLabel>
             {LOCAL_MODELS.map((m) => (
               <SelectItem key={m.id} value={m.id} textValue={m.label}>
                 <LocalRow
@@ -125,7 +120,7 @@ export function ModelSelector({
             ))}
           </SelectGroup>
           <SelectGroup>
-            <SelectLabel>Cloud (sends text to the provider)</SelectLabel>
+            <SelectLabel>{i18n.t('selector.cloudGroup')}</SelectLabel>
             {CLOUD_MODELS.map((m) => (
               <SelectItem key={m.id} value={m.id} textValue={m.label}>
                 <CloudRow spec={m} />
@@ -144,10 +139,7 @@ export function ModelSelector({
           )}
         >
           <AlertTriangle className="mt-px size-3.5 shrink-0" />
-          <span>
-            This model may exceed your device&rsquo;s estimated memory (
-            {selectedFeas.reason}). It will still try to load.
-          </span>
+          <span>{i18n.t('selector.memoryWarning', [selectedFeas.reason])}</span>
         </p>
       ) : null}
     </div>

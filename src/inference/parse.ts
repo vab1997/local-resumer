@@ -2,76 +2,106 @@ import type { Summary, SummaryPoint } from '@/src/shared/types'
 
 const MAX_POINTS = 12
 
-/** Pull the inner text of the first <tag>...</tag> occurrence, case-insensitive. */
-function extractTag(raw: string, tag: string): string | null {
-  const match = raw.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'))
-  return match ? match[1].trim() : null
+/** A bullet line: `-`/`*`/`•` marker, then the rest of the line. */
+const BULLET_RE = /^\s*[-*•]\s+(.*)$/
+
+/**
+ * Split one bullet's text into heading + detail. The schema is `**heading** — detail`, but weak
+ * models drift: tolerate `–`, `-` or `:` as the separator (with or without surrounding spaces),
+ * and a missing bold heading (the whole line becomes the detail).
+ */
+function splitPoint(text: string): SummaryPoint | null {
+  const bold = text.match(/^\*\*(.+?)\*\*\s*(?:[—–:]|-)?\s*(.*)$/)
+  if (bold) {
+    const heading = bold[1].trim()
+    const detail = bold[2].trim()
+    if (!heading && !detail) return null
+    return { heading, detail }
+  }
+  const plain = text.trim()
+  if (!plain) return null
+  return { heading: '', detail: plain }
 }
 
 /**
- * The TL;DR, with any leaked point tags stripped. A weak model sometimes spills `<points>` /
- * `<point>` into the <result> body; cut the result at the first such tag so the TL;DR stays clean.
+ * Collect the unique key points from the bullet list, deduped and capped. Continuation lines
+ * (indented text under a bullet) are folded into the previous point's detail. Dedupe collapses
+ * the repeated-output failure mode seen on small models; the cap bounds the result.
  */
-function cleanResult(result: string): string {
-  const tagStart = result.search(/<\/?points?\b/i)
-  return (tagStart >= 0 ? result.slice(0, tagStart) : result).trim()
-}
-
-/**
- * Collect the unique key points from across the whole output, deduped and capped. Scanning all
- * <point> tags (rather than one <points> block) is robust to the failures seen on the 1B: the
- * block gets repeated, and sometimes a stray <points> leaks into <result>. Dedupe collapses the
- * repeats; the cap bounds the result.
- */
-function extractPoints(raw: string): SummaryPoint[] {
+function extractPoints(lines: string[], firstBullet: number): SummaryPoint[] {
   const points: SummaryPoint[] = []
   const seen = new Set<string>()
-  for (const match of raw.matchAll(/<point[^>]*>([\s\S]*?)<\/point>/gi)) {
-    const inner = match[1]
-    const heading = extractTag(inner, 'heading') ?? ''
-    const detail = extractTag(inner, 'detail') ?? ''
-    if (!heading && !detail) continue
 
-    const key = `${heading}|${detail}`.toLowerCase()
-    if (seen.has(key)) continue // drop repeated points
-    seen.add(key)
-
-    points.push({ heading, detail })
-    if (points.length >= MAX_POINTS) break
+  for (let i = firstBullet; i < lines.length; i++) {
+    const line = lines[i]
+    const bullet = line.match(BULLET_RE)
+    if (bullet) {
+      const point = splitPoint(bullet[1])
+      if (!point) continue
+      const key = `${point.heading}|${point.detail}`.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      points.push(point)
+      if (points.length >= MAX_POINTS) break
+    } else if (line.trim() && points.length > 0) {
+      // Wrapped detail continuation under the last bullet.
+      const last = points[points.length - 1]
+      last.detail = `${last.detail} ${line.trim()}`.trim()
+    }
   }
   return points
 }
 
+/** Strip a leading `#`-heading marker (or surrounding bold) from a title line. */
+function cleanTitle(line: string): string {
+  return line
+    .replace(/^#{1,3}\s+/, '')
+    .replace(/^\*\*(.+)\*\*$/, '$1')
+    .trim()
+}
+
 /**
- * Parse the model's XML output into a Summary. A 1B model will sometimes break format, so a
- * missing title/result never yields a blank panel: we fall back to showing the raw output and
+ * Parse the model's Markdown output into a Summary. Expected shape: a `# title` heading, a TL;DR
+ * paragraph, then a `- **heading** — detail` bullet list. Small models sometimes break format, so
+ * a missing title/TL;DR never yields a blank panel: we fall back to showing the raw output and
  * flag it. Points are best-effort — a clean title + TL;DR with no points still renders.
  */
 export function parseSummary(raw: string): Summary {
   // Safety net for reasoning models (e.g. SmolLM3): even with thinking disabled, a stray
-  // <think>…</think> block can slip in before the schema. Drop it so it never pollutes parsing.
+  // <think>…</think> block can slip in before the output. Drop it so it never pollutes parsing.
   const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
-  const title = extractTag(cleaned, 'title')
-  const tldr = extractTag(cleaned, 'result')
-  // Scan for points OUTSIDE the result block, so a stray point leaked into <result> can't
-  // pollute them (the real points block lives after </result>).
-  const points = extractPoints(
-    cleaned.replace(/<result[^>]*>[\s\S]*?<\/result>/i, '')
+  const lines = cleaned.split('\n')
+
+  // Title: the first `#` heading; failing that, the first non-empty non-bullet line.
+  let titleIdx = lines.findIndex((l) => /^#{1,3}\s+\S/.test(l))
+  let title = ''
+  if (titleIdx >= 0) {
+    title = cleanTitle(lines[titleIdx])
+  } else {
+    titleIdx = lines.findIndex((l) => l.trim() && !BULLET_RE.test(l))
+    if (titleIdx >= 0) title = cleanTitle(lines[titleIdx])
+  }
+
+  // TL;DR: the paragraph lines between the title and the first bullet.
+  const firstBullet = lines.findIndex(
+    (l, i) => i > titleIdx && BULLET_RE.test(l)
   )
+  const tldrEnd = firstBullet >= 0 ? firstBullet : lines.length
+  const tldr = lines
+    .slice(titleIdx + 1, tldrEnd)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join(' ')
+
+  const points = firstBullet >= 0 ? extractPoints(lines, firstBullet) : []
 
   if (title && tldr) {
-    return {
-      title,
-      tldr: cleanResult(tldr),
-      points,
-      raw: cleaned,
-      parsedOk: true
-    }
+    return { title, tldr, points, raw: cleaned, parsedOk: true }
   }
 
   return {
-    title: title ?? '',
-    tldr: tldr ? cleanResult(tldr) : '',
+    title,
+    tldr,
     points,
     raw: cleaned,
     parsedOk: false

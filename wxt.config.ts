@@ -3,7 +3,7 @@ import { defineConfig } from 'wxt'
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-  modules: ['@wxt-dev/module-react'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/i18n/module'],
   vite: () => ({
     plugins: [tailwindcss()],
     build: {
@@ -15,12 +15,14 @@ export default defineConfig({
     }
   }),
   manifest: {
-    name: 'Local Resumer',
-    description:
-      'Summarize the current article with an AI model running locally in your browser.',
+    // UI labels follow the browser's UI language via @wxt-dev/i18n (locales/*.yml → _locales/).
+    // en is the fallback for any language without a messages file.
+    default_locale: 'en',
+    name: '__MSG_extName__',
+    description: '__MSG_extDescription__',
     permissions: ['sidePanel', 'tabs', 'storage'],
     // Clicking the toolbar icon opens the side panel (wired in the background script).
-    action: { default_title: 'Open Local Resumer' },
+    action: { default_title: '__MSG_actionTitle__' },
     // Transformers.js compiles ONNX Runtime to WebAssembly: the extension CSP must allow
     // wasm. Model weights are fetched from the Hugging Face Hub on first run, so connect-src
     // must allow it (CDN fetches are otherwise blocked by the default extension CSP).

@@ -3,7 +3,7 @@
  *
  * Runs on the side-panel thread (a cloud call is just a streamed fetch — no Web Worker). Single-pass
  * only: the providers' context windows dwarf any article, so there's no chunk/map-reduce. The prompt
- * (`buildMessages`) and the XML schema (`parseSummary`, on the panel side) are reused unchanged from
+ * (`buildMessages`) and the Markdown output schema (`parseSummary`, on the panel side) are reused unchanged from
  * the local path — only the transport differs.
  *
  * Streaming: `onDelta` fires with the full text-so-far on each token, so the panel can show the

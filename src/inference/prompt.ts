@@ -1,11 +1,13 @@
 /**
- * Prompt for the summarizer. Two distinct uses of XML here:
- *  - INPUT structure: the prompt we send is organized with Anthropic-style semantic sections
+ * Prompt for the summarizer.
+ *  - INPUT structure: the prompt we send is organized with Anthropic-style semantic XML sections
  *    (<task-context>, <rules>, <examples>, <output-formatting>) so the model understands intent.
- *  - OUTPUT schema: the model emits <title>/<result>/<points>, which parse.ts reads.
+ *  - OUTPUT schema: Markdown — `# title`, a TL;DR paragraph, then a `- **heading** — detail`
+ *    bullet list — which parse.ts reads. Markdown (v8, replacing the earlier XML schema) keeps
+ *    the cloud streaming view clean and renders directly.
  *
- * The tags the model fills contain NO instructional text — the "how" lives in <rules> and the
- * worked <examples>. This is what stops the 1B model from echoing slot-descriptions as content.
+ * The "how" lives in <rules> and the worked <examples>, not in the output slots. This is what
+ * stops small models from echoing slot-descriptions as content.
  *
  * The number of key points is NOT fixed in the system prompt — each call (single-pass vs reduce)
  * states its own count in the user message, so long articles can produce a richer summary.
@@ -28,16 +30,16 @@ const EXAMPLE_ARTICLE =
   'the changes before writing them.'
 
 const EXAMPLE_RESPONSE = [
-  '<title>Florbex: a local CLI for batch-renaming photos by date</title>',
-  '<result>Florbex renames image files in bulk using their EXIF capture date and a template ' +
+  '# Florbex: a local CLI for batch-renaming photos by date',
+  '',
+  'Florbex renames image files in bulk using their EXIF capture date and a template ' +
     'you define. It runs entirely on your machine so photos are never uploaded, and a new ' +
-    'dry-run mode previews changes before applying them.</result>',
-  '<points>',
-  '<point><heading>Date-based batch renaming</heading><detail>Florbex groups image files by ' +
-    'their EXIF capture date and renames them with a template you define.</detail></point>',
-  '<point><heading>Local and private</heading><detail>It reads metadata locally and never ' +
-    'uploads your photos.</detail></point>',
-  '</points>'
+    'dry-run mode previews changes before applying them.',
+  '',
+  '- **Date-based batch renaming** — Florbex groups image files by ' +
+    'their EXIF capture date and renames them with a template you define.',
+  '- **Local and private** — It reads metadata locally and never ' +
+    'uploads your photos.'
 ].join('\n')
 
 const SYSTEM_PROMPT = [
@@ -55,7 +57,7 @@ const SYSTEM_PROMPT = [
   '- Identify the most important points, drawn only from the article (the request says how many).',
   '- Respond in the same language as the article.',
   '- Produce the output exactly once. No conclusion, no "final thoughts", no repetition.',
-  '- Output only the result tags below, with nothing before or after them.',
+  '- Output only the Markdown structure below, with nothing before or after it.',
   '- The <examples> section is ONLY a format guide for a different, fictional article. Never ' +
     'reuse its wording, names (such as "Florbex"), or topic. Summarize only the user\'s article.',
   '</rules>',
@@ -71,14 +73,17 @@ const SYSTEM_PROMPT = [
   '</examples>',
   '',
   '<output-formatting>',
-  'Respond with exactly this structure and nothing else:',
-  '<title></title>',
-  '<result></result>',
-  '<points>',
-  '<point><heading></heading><detail></detail></point>',
-  '</points>',
-  'Include the number of <point> entries asked for in the request. <title> is a real,',
-  'descriptive article title. <result> is a 2-4 sentence TL;DR.',
+  'Respond in Markdown with exactly this structure and nothing else:',
+  '# <article title>',
+  '',
+  '<TL;DR paragraph>',
+  '',
+  '- **<point heading>** — <point detail>',
+  '',
+  'The first line is a level-1 heading with a real, descriptive article title. Then one',
+  'paragraph with a 2-4 sentence TL;DR. Then a bullet list with the number of points asked',
+  'for in the request; each bullet is exactly "- **heading** — detail". Output nothing after',
+  'the last bullet.',
   '</output-formatting>'
 ].join('\n')
 
@@ -102,9 +107,10 @@ export function buildMessages(articleText: string): PromptMessage[] {
 }
 
 /**
- * Lean MAP system prompt (no XML example): ~44 tokens vs the 511-token full prompt. The map step
- * emits freeform notes, not the XML schema, so the example is unnecessary overhead repeated per
- * chunk. Reserving the full prompt for reduce cuts thousands of repeated tokens on long articles.
+ * Lean MAP system prompt (no worked example): ~44 tokens vs the ~500-token full prompt. The map
+ * step emits freeform notes, not the output schema, so the example is unnecessary overhead
+ * repeated per chunk. Reserving the full prompt for reduce cuts thousands of repeated tokens on
+ * long articles.
  */
 const MAP_SYSTEM = [
   'You extract the key facts from ONE excerpt of a longer technical article.',
@@ -133,8 +139,8 @@ export function buildMapMessages(
 
 /**
  * Reduce step: synthesize the per-chunk notes into the final structured summary. Reuses the full
- * SYSTEM_PROMPT (rules + XML schema + example), since this is the pass that actually emits the
- * <title>/<result>/<points> output.
+ * SYSTEM_PROMPT (rules + Markdown schema + example), since this is the pass that actually emits
+ * the structured output.
  */
 export function buildReduceMessages(
   notes: string,

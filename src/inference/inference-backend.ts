@@ -14,7 +14,7 @@
 
 /** The text produced by a run, plus the metrics the result UI shows. */
 export interface SummarizeResult {
-  /** Raw model output text (XML schema); parsing into title/tldr happens on the panel side. */
+  /** Raw model output text (Markdown schema); parsing into title/tldr happens on the panel side. */
   raw: string
   /** Total tokens processed (input + output). For cloud this comes from provider `usage`. */
   tokens: number

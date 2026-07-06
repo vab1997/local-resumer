@@ -1,3 +1,4 @@
+import { i18n } from '#i18n'
 import { Button } from '@/src/components/ui/button'
 import { TooltipProvider } from '@/src/components/ui/tooltip'
 import { cn } from '@/src/lib/utils'
@@ -35,23 +36,23 @@ function dotClass(status: SummaryState['status']): string {
 function statusLabel(status: SummaryState['status']): string {
   switch (status) {
     case 'checking-backend':
-      return 'Checking device…'
+      return i18n.t('status.checking')
     case 'downloading':
-      return 'Downloading model…'
+      return i18n.t('status.downloading')
     case 'ready':
-      return 'Ready'
+      return i18n.t('status.ready')
     case 'needs-key':
-      return 'API key needed'
+      return i18n.t('status.needsKey')
     case 'extracting':
-      return 'Reading article…'
+      return i18n.t('status.extracting')
     case 'summarizing':
-      return 'Summarizing…'
+      return i18n.t('status.summarizing')
     case 'done':
-      return 'Ready'
+      return i18n.t('status.ready')
     case 'error':
-      return 'Error'
+      return i18n.t('status.error')
     case 'unsupported':
-      return 'Not supported'
+      return i18n.t('status.unsupported')
   }
 }
 
@@ -136,7 +137,7 @@ export function SummaryPanel() {
           <footer className="border-t border-border p-3">
             {state.status === 'summarizing' ? (
               <Button variant="outline" className="w-full" onClick={cancel}>
-                Cancel
+                {i18n.t('footer.cancel')}
               </Button>
             ) : (
               <Button
@@ -146,10 +147,10 @@ export function SummaryPanel() {
               >
                 {!busy && <Sparkles className="size-4" />}
                 {busy
-                  ? 'Working…'
+                  ? i18n.t('footer.working')
                   : state.status === 'done' && !isStale
-                    ? 'Summarize again'
-                    : 'Summarize this page'}
+                    ? i18n.t('footer.summarizeAgain')
+                    : i18n.t('footer.summarize')}
               </Button>
             )}
           </footer>

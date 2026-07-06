@@ -27,6 +27,7 @@
     "@radix-ui/react-select": "^2.3.1",
     "@radix-ui/react-tooltip": "^1.2.10",
     "@tailwindcss/vite": "^4.3.1",
+    "@wxt-dev/i18n": "^0.2.6",
     "ai": "^7.0.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

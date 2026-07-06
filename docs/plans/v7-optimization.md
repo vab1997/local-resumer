@@ -7,10 +7,10 @@ externalization warning, and parts of the code (notably `useSummarize`, 374 line
 to read. The ask was to review performance, readability, and bundle size using the Vercel
 react-best-practices / composition-patterns skills.
 
-**Honest reframe (agreed in grilling).** The three goals have very different ROI for *this* app:
+**Honest reframe (agreed in grilling).** The three goals have very different ROI for _this_ app:
 
 - **Bundle size / build warning → mostly cosmetic.** This is a **disk-loaded extension**, not a web
-  app. The 500 kB warning is a *network-transfer* default. ~100 MB of ORT WASM plus a **~2 GB model
+  app. The 500 kB warning is a _network-transfer_ default. ~100 MB of ORT WASM plus a **~2 GB model
   download** dominate every real load. Shaving panel JS changes nothing a user feels.
 - **React render perf → near-zero ROI.** The cost of this app is **inference in a Web Worker**, not
   React renders. The react-best-practices rules target the render path; applying them here produces

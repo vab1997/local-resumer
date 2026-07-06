@@ -30,14 +30,14 @@ export interface SummaryPoint {
 
 /** Parsed summary the model produced for an article. */
 export interface Summary {
-  /** Model-generated title (from <title>), or a fallback. */
+  /** Model-generated title (the leading `#` Markdown heading), or a fallback. */
   title: string
-  /** Model-generated TL;DR (from <result>), or a fallback. */
+  /** Model-generated TL;DR (the paragraph after the title), or a fallback. */
   tldr: string
-  /** Key points (from <points>), each a heading + explanation. Best-effort; may be empty. */
+  /** Key points (the `- **heading** — detail` bullets). Best-effort; may be empty. */
   points: SummaryPoint[]
   /** Raw model output, always kept so nothing is lost on a parse miss. */
   raw: string
-  /** False when the model broke the expected XML format and we fell back to raw. */
+  /** False when the model broke the expected Markdown format and we fell back to raw. */
   parsedOk: boolean
 }

@@ -1,0 +1,128 @@
+# English messages (default_locale — the fallback for every unlisted browser language).
+# Nested keys are read as dot-paths via i18n.t('group.key'); $1 is a positional substitution.
+
+extName: Local Resumer
+extDescription: Summarize the current article with an AI model running locally in your browser.
+actionTitle: Open Local Resumer
+
+# Header status word (SummaryPanel)
+status:
+  checking: Checking device…
+  downloading: Downloading model…
+  ready: Ready
+  needsKey: API key needed
+  extracting: Reading article…
+  summarizing: Summarizing…
+  error: Error
+  unsupported: Not supported
+
+# Footer action button (SummaryPanel)
+footer:
+  summarize: Summarize this page
+  summarizeAgain: Summarize again
+  working: Working…
+  cancel: Cancel
+
+# Per-state body copy (StatusView)
+checking:
+  title: Checking your device…
+  detail: Verifying WebGPU support.
+
+unsupported:
+  title: Device not supported yet
+  intro: 'Local Resumer runs the model on your GPU via WebGPU. To enable it:'
+  cloudHint: No WebGPU? Pick a Cloud model above — those run on a provider with your API key and don't need WebGPU (the article text is sent to the provider).
+  step1: 'Turn on hardware acceleration: Settings → System → "Use hardware acceleration".'
+  step2: Update your browser to the latest version, then restart it.
+  step3: 'Still off? Enable the flag at'
+
+downloading:
+  title: Downloading the model…
+  note: First run only — cached for next time.
+  starting: Starting…
+
+readyHint: Open an article, then summarize it.
+needsKeyHint: Add your API key above to use this model.
+
+extracting:
+  title: Reading the article…
+  detail: Extracting the main content.
+
+errorTitle: Something went wrong
+
+summarizing:
+  title: Summarizing the article…
+  short: Summarizing…
+  combining: Combining the summary…
+  waitingProvider: Waiting for the provider…
+  runningLocal: Running the model locally on your GPU.
+  chunk: Chunk
+  combiningLabel: Combining
+  estimateTitle: Estimated for this run — cancel below if it's too much. Actual shows on completion.
+
+loading: loading
+
+# Cloud API-key panel (CloudKeyPanel)
+keyPanel:
+  privacy: Cloud mode sends the article text to $1. Use a local model to keep everything on your device.
+  saved: $1 API key saved.
+  delete: Delete key
+  placeholder: $1 API key
+  save: Save
+  showKey: Show key
+  hideKey: Hide key
+  stored: Stored locally in this browser only. Get one at $1.
+
+# OpenAI model-access help (CloudKeyPanel, provider=openai)
+openaiAccess:
+  summary: Model not enabled? Check your OpenAI project
+  intro: 'If runs fail with "project does not have access to model", enable the models in your OpenAI project:'
+  step1: Open the OpenAI dashboard at
+  step2: Go to "Projects", then "Settings" (usually a gear icon).
+  step3: In "Limits", make sure gpt-4o-mini and gpt-5-mini are enabled.
+  step4: Close the OpenAI dashboard and retry.
+
+# Model picker (ModelSelector)
+selector:
+  aria: Model
+  onDevice: On-device
+  cloudGroup: Cloud (sends text to the provider)
+  cached: cached
+  per1M: per 1M
+  memoryWarning: This model may exceed your device's estimated memory ($1). It will still try to load.
+
+# Model/info card (ModelCard)
+card:
+  cloudBadge: Cloud
+  localBadge: Local · WebGPU
+  per1MTok: per 1M tok
+  cloudDesc: Runs on $1. The article text is sent to the provider.
+  localDesc: Reads the article on your GPU. Nothing leaves your device.
+
+webgpuInfo:
+  aria: About local execution
+  tooltip: Runs entirely on your device using WebGPU (your GPU). The article and the summary never leave your browser.
+
+# Hardware bar (HardwareInfoBar)
+hardware:
+  detecting: Detecting hardware…
+  gpu: GPU
+  vram: VRAM
+  bw: BW
+  ram: RAM
+  cores: Cores
+  webgpu: WebGPU
+  noWebgpu: No WebGPU
+  disclaimer: Estimates based on browser APIs. Actual specs may vary.
+
+# Finished summary (SummaryResult)
+result:
+  stalePrefix: You've switched pages. This summary is for
+  staleNowOn: — you're now on
+  staleSuffix: . Summarize this page to refresh.
+  capped: Very long article — summarized the first part.
+  tldr: TL;DR
+  keyPoints: Key points
+  rawNotice: The model didn't return the expected format, so here's its raw output.
+  download: Download .md
+  summaryFor: 'Summary for:'

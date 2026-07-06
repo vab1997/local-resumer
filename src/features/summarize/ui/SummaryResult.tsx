@@ -1,3 +1,4 @@
+import { i18n } from '#i18n'
 import { Badge } from '@/src/components/ui/badge'
 import { Button } from '@/src/components/ui/button'
 import type { Summary } from '@/src/shared/types'
@@ -57,22 +58,22 @@ export function SummaryResult({
     <div className="flex animate-in flex-col gap-3 duration-300 fade-in">
       {stale && (
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs leading-relaxed text-warning">
-          You’ve switched pages. This summary is for{' '}
+          {i18n.t('result.stalePrefix')}{' '}
           <span className="font-mono break-all">{source.url}</span>
           {currentUrl ? (
             <>
               {' '}
-              — you’re now on{' '}
+              {i18n.t('result.staleNowOn')}{' '}
               <span className="font-mono break-all">{currentUrl}</span>
             </>
           ) : null}
-          . Summarize this page to refresh.
+          {i18n.t('result.staleSuffix')}
         </div>
       )}
 
       {capped && (
         <div className="rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-          Very long article — summarized the first part.
+          {i18n.t('result.capped')}
         </div>
       )}
 
@@ -84,7 +85,7 @@ export function SummaryResult({
 
           <section>
             <h3 className="mb-1 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-              TL;DR
+              {i18n.t('result.tldr')}
             </h3>
             <Md>{summary.tldr}</Md>
           </section>
@@ -92,7 +93,7 @@ export function SummaryResult({
           {summary.points.length > 0 && (
             <section>
               <h3 className="mb-1 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-                Key points
+                {i18n.t('result.keyPoints')}
               </h3>
               <div className="flex flex-col gap-3">
                 {summary.points.map((point, i) => (
@@ -116,8 +117,7 @@ export function SummaryResult({
       ) : (
         <>
           <div className="rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-            The model didn’t return the expected format, so here’s its raw
-            output.
+            {i18n.t('result.rawNotice')}
           </div>
           {/* Raw text verbatim (NOT through markdown — that would strip the literal tags). */}
           <pre className="rounded-lg border border-border bg-muted p-3 font-mono text-xs leading-relaxed wrap-break-word whitespace-pre-wrap">
@@ -156,13 +156,13 @@ export function SummaryResult({
       <footer className="mt-1 flex items-center justify-between gap-3 border-t border-border pt-3">
         <Button variant="outline" size="sm" onClick={download}>
           <Download className="size-4" />
-          Download .md
+          {i18n.t('result.download')}
         </Button>
         <span
           className="min-w-0 truncate text-xs text-muted-foreground"
           title={source.url}
         >
-          Summary for: {source.title || source.url}
+          {i18n.t('result.summaryFor')} {source.title || source.url}
         </span>
       </footer>
     </div>

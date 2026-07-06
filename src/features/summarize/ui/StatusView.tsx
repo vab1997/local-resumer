@@ -1,3 +1,4 @@
+import { i18n } from '#i18n'
 import { Badge } from '@/src/components/ui/badge'
 import { FileText, KeyRound } from 'lucide-react'
 import { formatBytes, formatCost, formatTokens } from '../format'
@@ -15,8 +16,8 @@ export function StatusView({
       return (
         <Status
           spinner
-          title="Checking your device…"
-          detail="Verifying WebGPU support."
+          title={i18n.t('checking.title')}
+          detail={i18n.t('checking.detail')}
         />
       )
 
@@ -24,17 +25,15 @@ export function StatusView({
       return (
         <div className="flex flex-col gap-2">
           <h2 className="text-[15px] font-semibold text-warning">
-            Device not supported yet
+            {i18n.t('unsupported.title')}
           </h2>
           <p className="text-sm text-muted-foreground">{state.reason}</p>
           <p className="text-sm text-muted-foreground">
-            Local Resumer runs the model on your GPU via WebGPU. To enable it:
+            {i18n.t('unsupported.intro')}
           </p>
           <WebGpuActivationSteps />
           <p className="mt-1 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            No WebGPU? Pick a <span className="font-medium">Cloud</span> model
-            above — those run on a provider with your API key and don&rsquo;t
-            need WebGPU (the article text is sent to the provider).
+            {i18n.t('unsupported.cloudHint')}
           </p>
         </div>
       )
@@ -53,11 +52,11 @@ export function StatusView({
           <div className="flex items-center gap-2">
             <Spinner />
             <h2 className="text-[15px] font-semibold">
-              Downloading the model…
+              {i18n.t('downloading.title')}
             </h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            First run only — cached for next time.
+            {i18n.t('downloading.note')}
           </p>
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
@@ -66,7 +65,7 @@ export function StatusView({
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            {bytes ?? 'Starting…'}
+            {bytes ?? i18n.t('downloading.starting')}
             {pct !== undefined ? ` · ${pct}%` : ''}
           </p>
         </div>
@@ -80,7 +79,7 @@ export function StatusView({
           className="gap-1.5 py-1 font-normal text-muted-foreground"
         >
           <FileText className="size-3.5" />
-          Open an article, then summarize it.
+          {i18n.t('readyHint')}
         </Badge>
       )
 
@@ -91,7 +90,7 @@ export function StatusView({
           className="gap-1.5 py-1 font-normal text-muted-foreground"
         >
           <KeyRound className="size-3.5" />
-          Add your API key above to use this model.
+          {i18n.t('needsKeyHint')}
         </Badge>
       )
 
@@ -99,8 +98,8 @@ export function StatusView({
       return (
         <Status
           spinner
-          title="Reading the article…"
-          detail="Extracting the main content."
+          title={i18n.t('extracting.title')}
+          detail={i18n.t('extracting.detail')}
         />
       )
 
@@ -116,7 +115,7 @@ export function StatusView({
       return (
         <div className="flex flex-col gap-2">
           <h2 className="text-[15px] font-semibold text-destructive">
-            Something went wrong
+            {i18n.t('errorTitle')}
           </h2>
           <p className="text-sm text-muted-foreground">{state.message}</p>
         </div>
@@ -135,13 +134,13 @@ function CloudStreamingStatus({ state }: { state: SummarizingState }) {
         <div className="flex items-center gap-2">
           <Spinner />
           <h2 className="text-[15px] font-semibold">
-            Summarizing the article…
+            {i18n.t('summarizing.title')}
           </h2>
         </div>
         {estTokens !== undefined && (
           <span
             className="shrink-0 text-xs text-muted-foreground"
-            title="Estimated for this run — cancel below if it's too much. Actual shows on completion."
+            title={i18n.t('summarizing.estimateTitle')}
           >
             ~{formatTokens(estTokens)}
             {estCostUsd !== undefined ? ` · ~${formatCost(estCostUsd)}` : ''}
@@ -154,7 +153,7 @@ function CloudStreamingStatus({ state }: { state: SummarizingState }) {
         </pre>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Waiting for the provider…
+          {i18n.t('summarizing.waitingProvider')}
         </p>
       )}
     </div>
@@ -168,10 +167,10 @@ function LocalProgressStatus({ state }: { state: SummarizingState }) {
   const pct = hasProgress ? Math.round(((done ?? 0) / total) * 100) : undefined
   const title =
     phase === 'reduce'
-      ? 'Combining the summary…'
+      ? i18n.t('summarizing.combining')
       : hasProgress
-        ? 'Summarizing the article…'
-        : 'Summarizing…'
+        ? i18n.t('summarizing.title')
+        : i18n.t('summarizing.short')
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -187,12 +186,15 @@ function LocalProgressStatus({ state }: { state: SummarizingState }) {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            {phase === 'reduce' ? 'Combining' : 'Chunk'} {done ?? 0} / {total}
+            {phase === 'reduce'
+              ? i18n.t('summarizing.combiningLabel')
+              : i18n.t('summarizing.chunk')}{' '}
+            {done ?? 0} / {total}
           </p>
         </>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Running the model locally on your GPU.
+          {i18n.t('summarizing.runningLocal')}
         </p>
       )}
       {partials && partials.length > 0 ? (
@@ -234,7 +236,7 @@ function Spinner() {
   return (
     <div
       className="size-5 animate-spin rounded-full border-2 border-border border-t-primary"
-      aria-label="loading"
+      aria-label={i18n.t('loading')}
     />
   )
 }
