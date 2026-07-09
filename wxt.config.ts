@@ -22,7 +22,17 @@ export default defineConfig({
     description: '__MSG_extDescription__',
     permissions: ['sidePanel', 'tabs', 'storage'],
     // Clicking the toolbar icon opens the side panel (wired in the background script).
-    action: { default_title: '__MSG_actionTitle__' },
+    // Icons: public/icon/{size}.png (mark cropped from assets/store-logo.png). The full logo is
+    // store-listing art uploaded to the dashboard by hand — kept out of public/ so it never ships.
+    action: {
+      default_title: '__MSG_actionTitle__',
+      default_icon: {
+        16: 'icon/16.png',
+        32: 'icon/32.png',
+        48: 'icon/48.png',
+        128: 'icon/128.png'
+      }
+    },
     // Transformers.js compiles ONNX Runtime to WebAssembly: the extension CSP must allow
     // wasm. Model weights are fetched from the Hugging Face Hub on first run, so connect-src
     // must allow it (CDN fetches are otherwise blocked by the default extension CSP).
