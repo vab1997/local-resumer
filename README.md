@@ -47,7 +47,9 @@ Extension contexts are isolated and talk by message-passing:
   (long). WebGPU only.
 - **Cloud backend** — cloud runs skip the worker: a single-pass, streaming call to the provider
   via the [Vercel AI SDK], lazy-loaded so local-only sessions never pay for it.
-- **Content script** — runs Readability on demand and returns the clean article text.
+- **Content script** — runs Readability and returns the clean article text. Injected on demand
+  (no always-on script): the first Summarize asks for site access via Chrome's optional-permission
+  prompt, then each run injects into just that tab.
 - **Background service worker** — opens the side panel from the toolbar.
 
 A single run: resolve the active tab → extract its article → (single pass or map-reduce) stateless

@@ -20,7 +20,12 @@ export default defineConfig({
     default_locale: 'en',
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',
-    permissions: ['sidePanel', 'tabs', 'storage'],
+    permissions: ['sidePanel', 'tabs', 'storage', 'scripting'],
+    // No install-time host access: the content script is runtime-registered (see
+    // entrypoints/content.ts) and injected on demand. Chrome prompts once, on the first
+    // Summarize, via permissions.request() — keeps the install warning-free and the store
+    // review out of the in-depth queue for broad host permissions.
+    optional_host_permissions: ['*://*/*'],
     // Clicking the toolbar icon opens the side panel (wired in the background script).
     // Icons: public/icon/{size}.png (mark cropped from assets/store-logo.png). The full logo is
     // store-listing art uploaded to the dashboard by hand — kept out of public/ so it never ships.
