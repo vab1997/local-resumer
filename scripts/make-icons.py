@@ -24,12 +24,17 @@ CROP = (205, 15, 205 + 790, 15 + 790)
 CANVAS = 1024
 RADIUS = int(CANVAS * 0.225)  # rounded-rect corner radius
 MARK_SCALE = 0.80  # mark size relative to canvas
-GRAD_TOP = (110, 168, 254)  # --primary #6ea8fe (matches the Summarize button)
-GRAD_BOTTOM = (110, 168, 254)  # solid, same as GRAD_TOP
+GRAD_TOP = (13, 13, 15)  # near-black squircle
+GRAD_BOTTOM = (13, 13, 15)  # solid, same as GRAD_TOP
 
 # Alpha ramp: color distance to bg where a pixel becomes fully opaque
 FULL_TRANSPARENT = 4.0
 FULL_OPAQUE = 12.0
+
+# Navy -> white remap (luminance ramp): the A and the lens ring/handle are the
+# only near-black pixels; the gray document and the blue lens interior stay put.
+WHITE_BELOW_L = 40.0  # fully white at or below this luminance
+KEEP_ABOVE_L = 80.0  # untouched at or above this luminance
 
 
 def remove_background(im: Image.Image) -> Image.Image:
@@ -91,8 +96,28 @@ def gradient_squircle() -> Image.Image:
     return grad
 
 
+def navy_to_white(mark: Image.Image) -> Image.Image:
+    px = mark.load()
+    for y in range(mark.height):
+        for x in range(mark.width):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            lum = 0.299 * r + 0.587 * g + 0.114 * b
+            if lum < KEEP_ABOVE_L:
+                f = min(1.0, (KEEP_ABOVE_L - lum) / (KEEP_ABOVE_L - WHITE_BELOW_L))
+                px[x, y] = (
+                    int(r + (255 - r) * f),
+                    int(g + (255 - g) * f),
+                    int(b + (255 - b) * f),
+                    a,
+                )
+    return mark
+
+
 def main():
     mark = remove_background(Image.open(SRC).crop(CROP))
+    mark = navy_to_white(mark)
     mark = mark.crop(mark.getbbox())  # tighten to the visible mark, then center
     side = int(CANVAS * MARK_SCALE)
     scale = side / max(mark.size)
