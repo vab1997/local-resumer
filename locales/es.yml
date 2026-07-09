@@ -46,6 +46,10 @@ extracting:
 
 errorTitle: Algo salió mal
 
+extractionErrors:
+  permissionNeeded: ArticleLens necesita permiso para leer la página. Apretá Resumir de nuevo y elegí "Permitir" cuando Chrome pregunte.
+  cannotAccess: Esta página no puede ser leída por extensiones (p. ej. páginas de Chrome o el Web Store). Abrí un artículo y probá de nuevo.
+
 summarizing:
   title: Resumiendo el artículo…
   short: Resumiendo…

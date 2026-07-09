@@ -50,6 +50,11 @@ extracting:
 
 errorTitle: Something went wrong
 
+# Extraction / host-permission errors (article-extraction)
+extractionErrors:
+  permissionNeeded: ArticleLens needs permission to read the page. Press Summarize again and choose "Allow" when Chrome asks.
+  cannotAccess: This page can't be read by extensions (e.g. Chrome pages or the Web Store). Open an article and try again.
+
 summarizing:
   title: Summarizing the article…
   short: Summarizing…

@@ -10,3 +10,4 @@ public/ort
 
 # Throwaway model test outputs
 docs/results test/
+__pycache__/

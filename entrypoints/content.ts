@@ -5,14 +5,22 @@ import type {
 import { Readability } from '@mozilla/readability'
 
 /**
- * Content script: extracts the page's article on demand. It only registers a listener and does
- * no work until the panel asks, so it's cheap to run everywhere. Readability mutates the DOM,
- * so we parse a clone.
+ * Content script: extracts the page's article on demand. Runtime-registered (not in the
+ * manifest): the panel injects it via chrome.scripting.executeScript at summarize time, under
+ * the optional host permission the user granted — no always-on injection, no install warning.
+ * Readability mutates the DOM, so we parse a clone.
  */
 export default defineContentScript({
   matches: ['*://*/*'],
+  registration: 'runtime',
   runAt: 'document_idle',
   main() {
+    // Injected programmatically, so a second executeScript into the same page is possible
+    // (e.g. a race between runs). One listener is enough; a duplicate would double-respond.
+    const w = window as { __articleLensExtractor?: boolean }
+    if (w.__articleLensExtractor) return
+    w.__articleLensExtractor = true
+
     chrome.runtime.onMessage.addListener(
       (
         message: ExtractArticleRequest,

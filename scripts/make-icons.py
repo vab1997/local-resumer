@@ -146,6 +146,56 @@ def lens_to_neutral(mark: Image.Image) -> Image.Image:
     return mark
 
 
+# Wordmark region ("ArticleLens" text) in the source logo, for the promo tile
+WORDMARK_CROP = (150, 810, 1105, 985)
+TILE_W, TILE_H = 440, 280  # Chrome Web Store small promo tile
+
+
+def make_promo_tile(mark: Image.Image) -> None:
+    """Store promo tile: dark background, mark above the recolored wordmark. Rendered at
+    2x and downscaled for crisp text."""
+    scale = 2
+    tile = Image.new("RGBA", (TILE_W * scale, TILE_H * scale), (*GRAD_TOP, 255))
+
+    wordmark = remove_background(Image.open(SRC).crop(WORDMARK_CROP))
+    wordmark = navy_to_white(wordmark)  # "Article" goes white; "Lens" keeps its blue
+    # Lighten the blue "Lens" letters so they read on the dark background.
+    px = wordmark.load()
+    for y in range(wordmark.height):
+        for x in range(wordmark.width):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            _, s, _ = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+            if s > 0.2:
+                px[x, y] = (
+                    int(r + (255 - r) * 0.45),
+                    int(g + (255 - g) * 0.45),
+                    b,
+                    a,
+                )
+    wordmark = wordmark.crop(wordmark.getbbox())
+
+    mark_h = int(TILE_H * scale * 0.52)
+    m = mark.resize((int(mark.width * mark_h / mark.height), mark_h), Image.LANCZOS)
+    wm_w = int(TILE_W * scale * 0.62)
+    wm = wordmark.resize(
+        (wm_w, int(wordmark.height * wm_w / wordmark.width)), Image.LANCZOS
+    )
+
+    gap = int(TILE_H * scale * 0.06)
+    total_h = m.height + gap + wm.height
+    top = (TILE_H * scale - total_h) // 2
+    tile.alpha_composite(m, ((TILE_W * scale - m.width) // 2, top))
+    tile.alpha_composite(wm, ((TILE_W * scale - wm.width) // 2, top + m.height + gap))
+
+    out = ROOT / "assets" / "store"
+    out.mkdir(parents=True, exist_ok=True)
+    tile.resize((TILE_W, TILE_H), Image.LANCZOS).save(
+        out / "promo-tile-440x280.png"
+    )
+
+
 def main():
     mark = remove_background(Image.open(SRC).crop(CROP))
     mark = navy_to_white(mark)
@@ -164,6 +214,8 @@ def main():
 
     for size in (16, 32, 48, 96, 128):
         icon.resize((size, size), Image.LANCZOS).save(f"{OUT_DIR}/{size}.png")
+
+    make_promo_tile(mark)
     print("done")
 
 

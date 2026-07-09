@@ -64,6 +64,7 @@ WXT file-based entrypoints under `entrypoints/`. Extension contexts are isolated
 - **Inference Web Worker** (`src/inference/inference.worker.ts`) — loads the model once, runs
   generation off the UI thread. Decides **single-pass (short) vs chunked map-reduce (long)**.
 - **Content script** (`entrypoints/content.ts`) — runs Readability on demand, returns clean text.
+  Runtime-registered; injected per run by the panel (`scripting.executeScript`).
 - **Background SW** (`entrypoints/background.ts`) — opens the side panel.
 
 Feature-based layout: `src/features/summarize`, `src/inference`, `src/components/ui`, `src/shared`.
@@ -81,8 +82,11 @@ Feature-based layout: `src/features/summarize`, `src/inference`, `src/components
 
 ## Manifest / permissions
 
-MV3 (Chrome). Permissions: `sidePanel`, `tabs`, `storage`. Content script on `*://*/*` (on-demand
-extraction). CSP as above.
+MV3 (Chrome). Permissions: `sidePanel`, `tabs`, `storage`, `scripting`; host access is
+**optional** (`optional_host_permissions: *://*/*`), requested at runtime on the first Summarize.
+The content script is runtime-registered (v11) and injected per run via `scripting.executeScript`
+— no declared content script, no install-time host warning. CSP as above. Store copy lives in
+`docs/store/`.
 
 ## Conventions
 
