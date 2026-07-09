@@ -9,6 +9,7 @@ Pipeline: crop mark from full logo -> flood-fill background to transparency
 -> composite onto a rounded-rect indigo->violet gradient -> export sizes.
 """
 
+import colorsys
 from collections import deque
 from pathlib import Path
 
@@ -35,6 +36,12 @@ FULL_OPAQUE = 12.0
 # only near-black pixels; the gray document and the blue lens interior stay put.
 WHITE_BELOW_L = 40.0  # fully white at or below this luminance
 KEEP_ABOVE_L = 80.0  # untouched at or above this luminance
+
+# Lens-interior remap: the only saturated pixels are the glassy blue/violet
+# gradient and the indigo text lines. Both go neutral to match the document:
+# gradient -> near-white fill, text lines (more saturated, s>~0.46) -> gray.
+LENS_WHITE = (246, 247, 249)
+LENS_LINE_GRAY = (170, 176, 188)
 
 
 def remove_background(im: Image.Image) -> Image.Image:
@@ -115,9 +122,34 @@ def navy_to_white(mark: Image.Image) -> Image.Image:
     return mark
 
 
+def lens_to_neutral(mark: Image.Image) -> Image.Image:
+    px = mark.load()
+    for y in range(mark.height):
+        for x in range(mark.width):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            _, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+            if s > 0.10 and v > 0.25:
+                lineness = min(1.0, max(0.0, (s - 0.46) / 0.12))
+                t = tuple(
+                    int(LENS_WHITE[i] + (LENS_LINE_GRAY[i] - LENS_WHITE[i]) * lineness)
+                    for i in range(3)
+                )
+                f = min(1.0, (s - 0.10) / 0.10)  # soft edges at low saturation
+                px[x, y] = (
+                    int(r + (t[0] - r) * f),
+                    int(g + (t[1] - g) * f),
+                    int(b + (t[2] - b) * f),
+                    a,
+                )
+    return mark
+
+
 def main():
     mark = remove_background(Image.open(SRC).crop(CROP))
     mark = navy_to_white(mark)
+    mark = lens_to_neutral(mark)
     mark = mark.crop(mark.getbbox())  # tighten to the visible mark, then center
     side = int(CANVAS * MARK_SCALE)
     scale = side / max(mark.size)
