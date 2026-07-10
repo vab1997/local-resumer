@@ -36,7 +36,7 @@ pnpm workspace, two apps:
 - **`apps/extension`** — the extension (everything below refers to it).
 - **`apps/web`** — product site (Astro 6 + Tailwind v4, no React, dark terminal style mirroring
   skillstui.sh). Landing + privacy policy (`/privacy`, `/es/privacy`). Deploys to Vercel with
-  **root directory `apps/web`**; provisional URL `https://article-lens.vercel.app`.
+  **root directory `apps/web`**; provisional URL `https://article-lens-web.vercel.app`.
 
 Shared docs stay at the repo root (`docs/`), including `docs/store/` (Web Store copy).
 

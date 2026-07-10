@@ -39,4 +39,4 @@ de memoria para el modelo por defecto. Los modelos cloud funcionan en cualquier 
 necesitan WebGPU.
 
 Código abierto: https://github.com/vab1997/article-lens
-Web y política de privacidad: https://article-lens.vercel.app
+Web y política de privacidad: https://article-lens-web.vercel.app

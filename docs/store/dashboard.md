@@ -53,7 +53,7 @@ site; access is used exclusively to read the page's article text on explicit use
 - **Language(s):** English + Spanish (the package ships `_locales/en` + `_locales/es`).
 - **Remote code:** **No.** All code ships in the package (ONNX Runtime WASM is bundled at
   `/ort`; model weights are data, not code, fetched from the Hugging Face Hub).
-- **Privacy policy URL:** `https://article-lens.vercel.app/privacy` (source:
+- **Privacy policy URL:** `https://article-lens-web.vercel.app/privacy` (source:
   `apps/web/src/pages/privacy.astro`; ES at `/es/privacy`). ⚠️ Confirm the real Vercel project
   URL after the first deploy — if it differs, update this and `apps/web/src/layouts/Layout.astro`
   (`SITE`).

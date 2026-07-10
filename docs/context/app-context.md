@@ -125,7 +125,7 @@ chunking), `tokenizer.ts` (token counting), `parse.ts` (Markdown → summary).
 | v9  | **OpenRouter provider** (free `:free` models via `@openrouter/ai-sdk-provider`); per-provider selector groups; "Free" badges (`isFreeModel`); free-tier 429/502/503 error mapping; CSP + i18n                                                                                      | `docs/plans/v9-openrouter-free-models.md`                           |
 | v10 | **Rename → ArticleLens** (name no longer matched local+cloud reality): manifest/locales, panel title, error strings, `package.json` (`article-lens`), README repositioned local-first + cloud, CLAUDE/AGENT goal, GitHub repo rename; brand icons (dark squircle, white mark)      | `docs/plans/v10-rename-articlelens.md`                              |
 | v11 | **Publish prep**: content script → runtime-registered, injected per run (`scripting.executeScript`); host access → `optional_host_permissions` (one prompt on first Summarize; fixes pre-install-page bug); v1.0.0; store copy (`docs/store/`) + promo tile; privacy policy pending | `docs/plans/v11-publish-prep.md`                                    |
-| v12 | **Monorepo + web**: pnpm workspace `apps/extension` + `apps/web`; site Astro 6 + Tailwind v4 (dark terminal style, mirror of skillstui.sh) with landing + privacy EN/ES (`/privacy`, `/es/privacy`); deploys to Vercel (root dir `apps/web`, provisional article-lens.vercel.app)   | `docs/plans/v12-monorepo-web.md`                                    |
+| v12 | **Monorepo + web**: pnpm workspace `apps/extension` + `apps/web`; site Astro 6 + Tailwind v4 (dark terminal style, mirror of skillstui.sh) with landing + privacy EN/ES (`/privacy`, `/es/privacy`); deploys to Vercel (root dir `apps/web`, provisional article-lens-web.vercel.app)   | `docs/plans/v12-monorepo-web.md`                                    |
 
 ## Current state & deferred
 
@@ -201,7 +201,7 @@ key-entry** (the definitive fix for per-account model access — the v8 guide is
 
 pnpm workspace: **`apps/extension`** (the extension) + **`apps/web`** (Astro site: landing +
 privacy `/privacy` · `/es/privacy`; Vercel, root dir `apps/web`, provisional
-article-lens.vercel.app). Root proxies: `pnpm dev:ext` · `pnpm build:ext` (→
+article-lens-web.vercel.app). Root proxies: `pnpm dev:ext` · `pnpm build:ext` (→
 `apps/extension/.output/chrome-mv3`) · `pnpm compile:ext` · `pnpm lint:ext` · `pnpm zip:ext` ·
 `pnpm dev:web` · `pnpm build:web` · `pnpm preview:web` · `pnpm lint:web`. Unprefixed scripts
 still work inside each app. Load unpacked from `apps/extension/.output/chrome-mv3/`.

@@ -36,4 +36,4 @@ Local models need a WebGPU-capable browser (recent Chrome/Edge) and a GPU with ~
 for the default model. Cloud models work on any machine — no WebGPU needed.
 
 Open source: https://github.com/vab1997/article-lens
-Website & privacy policy: https://article-lens.vercel.app
+Website & privacy policy: https://article-lens-web.vercel.app
