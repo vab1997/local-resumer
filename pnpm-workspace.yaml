@@ -1,3 +1,6 @@
+packages:
+  - apps/*
+
 # Build-script policy for pnpm 11. esbuild (Vite) and sharp (WXT icon generation) need their
 # install scripts; the node-only backends are intentionally not built — the extension runs in
 # the browser, not Node.

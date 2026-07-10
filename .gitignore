@@ -6,7 +6,12 @@ stats.html
 .DS_Store
 
 # Generated: ORT wasm binaries copied from node_modules by scripts/copy-ort.mjs (postinstall)
-public/ort
+apps/extension/public/ort
+
+# Astro / Vercel (apps/web)
+.astro
+.vercel
+dist
 
 # Throwaway model test outputs
 docs/results test/

@@ -4,6 +4,14 @@ import { defineConfig } from 'wxt'
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/i18n/module'],
+  hooks: {
+    'build:manifestGenerated': (_, manifest) => {
+      // WXT auto-adds host_permissions from the runtime-registered content script's `matches`,
+      // which would grant all-sites at install and silently defeat the optional-permission
+      // prompt (the whole point of v11). Host access must come only from the runtime request.
+      delete manifest.host_permissions
+    }
+  },
   vite: () => ({
     plugins: [tailwindcss()],
     build: {
