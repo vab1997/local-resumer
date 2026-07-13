@@ -3,6 +3,8 @@
 AI-powered browser extension that turns any article into a clean, structured summary. Run models
 **locally for privacy** or use your favorite **cloud provider**.
 
+**[→ Install from the Chrome Web Store](https://chromewebstore.google.com/detail/kchemponejhcgbnchebgmfonoddiklhn)** · [Website](https://article-lens-web.vercel.app)
+
 **Local-first**: by default the AI model downloads once and runs entirely on your device in-browser
 via WebGPU — no server, no API keys, the content never leaves the machine. **Cloud escape hatch**:
 you can opt into a hosted provider (OpenAI, Anthropic, or OpenRouter) with your own API key — the

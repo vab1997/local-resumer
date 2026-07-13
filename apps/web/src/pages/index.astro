@@ -51,21 +51,23 @@ const steps = [
       <div class="mb-12">
         <p class="mb-2 text-xs tracking-widest uppercase">Get it</p>
         <div class="flex items-center gap-3">
-          <span
-            class="flex items-center gap-2 border border-zinc-800 px-4 py-3 text-xs text-zinc-500 select-none"
-            title="Pending Chrome Web Store review"
+          <a
+            href="https://chromewebstore.google.com/detail/kchemponejhcgbnchebgmfonoddiklhn"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-2 border bg-white px-4 py-3 text-sm text-black transition-all duration-150 ease-out hover:bg-white/80 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             <Puzzle class="size-5" />
-            Chrome Web Store — coming soon
-          </span>
+            Add to Chrome
+          </a>
 
           <a
             href="https://github.com/vab1997/article-lens"
             target="_blank"
             rel="noopener noreferrer"
-            class="flex items-center gap-2 border bg-white px-4 py-3 text-sm text-black transition-all duration-150 ease-out hover:bg-white/80 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+            class="border-border flex items-center gap-2 border bg-transparent px-4 py-3 text-sm text-white transition-all duration-150 ease-out hover:border-white/10 hover:bg-white/10 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
           >
-            <GithubIcon class="size-5 text-black" />
+            <GithubIcon class="size-5" />
             GitHub
           </a>
         </div>

@@ -1,5 +1,10 @@
 # Chrome Web Store — dashboard answers (copy-paste source)
 
+> **PUBLISHED 2026-07-13** — live at
+> https://chromewebstore.google.com/detail/kchemponejhcgbnchebgmfonoddiklhn (item ID
+> `kchemponejhcgbnchebgmfonoddiklhn`). This doc remains the source for future listing edits;
+> version bumps re-enter review on upload.
+
 Everything the developer dashboard asks for, pre-written. Long descriptions live in
 `listing-en.md` / `listing-es.md`; the promo tile in `assets/store/promo-tile-440x280.png`;
 screenshots are captured manually (1280×800, 1–5).
