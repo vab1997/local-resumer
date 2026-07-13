@@ -75,3 +75,15 @@ site; access is used exclusively to read the page's article text on explicit use
 - [ ] Data usage form completed (above)
 - [ ] Web deployed on Vercel (root dir `apps/web`) and privacy URL confirmed
 - [ ] Contact email verified, trader status declared
+
+## Release checklist (new version)
+
+1. Changes merged to main (repo workflow).
+2. Bump `apps/extension/package.json` version (must exceed the published one).
+3. `pnpm compile:ext && pnpm lint:ext && pnpm build:ext` + manual smoke on the unpacked build.
+4. `pnpm zip:ext` → `.output/article-lens-<version>-chrome.zip`.
+5. Dashboard → item → Package → **Upload new package** (listing/privacy persist).
+6. Only if changed: new permissions → justify in Privacy tab (warning-bearing permissions
+   disable the extension for existing users until re-accepted — avoid); data-practice changes →
+   update the data-usage form **and** the website privacy policy first.
+7. Submit for review → on approval publish; Chrome auto-updates users within hours.
