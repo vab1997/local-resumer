@@ -9,12 +9,32 @@ of every session. It carries the current architecture, durable decisions, iterat
 links to the plans in `docs/plans/`), and current state. This CLAUDE.md is the short version +
 the workflow rules.
 
-## Workflow (important — follow for every implementation plan)
+## Workflow (important — follow for every feature/fix)
 
-1. **Grill before building.** Before implementing ANY plan, work the approach with `/grill-me`,
-   analyzing the options for the best implementation.
-2. **Save the plan.** Save the agreed plan to `docs/plans/` before implementing.
-3. **Keep context in sync.** After the plan / on each iteration, update
+**Default pipeline (first used in v13):** `/wayfinder` → `/to-spec` → `/to-tickets` →
+`/implement` (one ticket per fresh session, working the dependency frontier).
+
+Every effort gets ONE folder — **`docs/efforts/<slug>/`** — holding its whole trail:
+
+```
+docs/efforts/<slug>/
+  map.md      # wayfinder map (destination, decisions index, fog, out of scope)
+  tickets/    # wayfinder DECISION tickets (research/prototype/grilling/task + resolutions)
+  assets/     # research findings, prototype notes, etc.
+  spec.md     # /to-spec output (PRD; label ready-for-agent)
+  issues/     # /to-tickets IMPLEMENTATION tickets (numbered in dependency order)
+```
+
+This is also the **issue tracker** for wayfinder / to-spec / to-tickets: local markdown, status +
+assignee + blocked-by in each file's frontmatter/body. Decision tickets (`tickets/`) and
+implementation tickets (`issues/`) never mix.
+
+Rules that still hold:
+
+1. **Plans stay in `docs/plans/`** — the historical v1..vN series; the effort folder links to its
+   plan and vice versa. Small changes that skip the pipeline still grill via `/grill-me` and save
+   a plan there.
+2. **Keep context in sync.** After planning / each iteration, update
    `docs/context/app-context.md` so every session shares the same picture.
 
 ## Status
