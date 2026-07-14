@@ -17,9 +17,9 @@ import { parseSummary } from '@/src/inference/parse'
 import type { WorkerEvent, WorkerRequest } from '@/src/shared/messages'
 import { getModelSpec, isCloudModel } from '@/src/shared/models'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { modelCacheKey } from './model-cache'
 import { extractRun, type Run } from './run'
 import type { SummaryState } from './state'
-import { modelCacheKey } from './useModelSelection'
 
 interface Progress {
   phase: 'map' | 'reduce'
@@ -33,12 +33,22 @@ export interface LocalBackend {
   start: () => Promise<void>
   /** Ask the worker to stop the in-flight run (it replies `CANCELLED`). */
   cancel: () => void
+  /**
+   * Opt in to downloading the selected model (v13): creates the worker and loads in one step
+   * (download → VRAM → ready). Only meaningful from `needs-download`.
+   */
+  requestDownload: () => void
+  /** Abort an in-flight download: terminates the worker, back to `needs-download`. Fully
+   * downloaded files stay in the browser cache, so a retry never re-fetches them. */
+  cancelDownload: () => void
   /** The active model's measured download size, for the model card. Undefined for cloud/unknown. */
   modelSizeBytes: number | undefined
 }
 
 export function useLocalBackend(
-  selectedModelId: string | undefined
+  selectedModelId: string | undefined,
+  /** Cache-check verdict for this model: true/false once known, undefined while checking. */
+  downloaded: boolean | undefined
 ): LocalBackend {
   const [state, setState] = useState<SummaryState>({
     status: 'checking-backend'
@@ -56,13 +66,24 @@ export function useLocalBackend(
   )
   const lastPctRef = useRef(-1)
 
+  // v13: downloading is opt-in. True once the user pressed the download CTA for THIS model;
+  // reset on every swap so picking another model never starts a fetch by itself.
+  const [downloadRequested, setDownloadRequested] = useState(false)
+
   // Reset to a neutral status whenever the model changes (React "adjust state on prop change",
   // done in render). Clears a stale summary on every swap; the new worker's lifecycle takes over.
   const [lastModelId, setLastModelId] = useState(selectedModelId)
   if (selectedModelId !== lastModelId) {
     setLastModelId(selectedModelId)
+    setDownloadRequested(false)
     setState({ status: 'checking-backend' })
   }
+
+  // The worker-existence gate (v13). One boolean so the effect below doesn't re-run (and
+  // recreate the worker) when `downloaded` flips false→true at the end of a requested download.
+  const isLocal =
+    !!selectedModelId && !isCloudModel(getModelSpec(selectedModelId))
+  const wantWorker = isLocal && (downloaded === true || downloadRequested)
 
   // Show the selected model's last measured size immediately (cache loads may not re-emit byte
   // progress). Cloud models have no cached size, so this clears the badge for them.
@@ -86,11 +107,25 @@ export function useLocalBackend(
     })
   }, [])
 
+  // Without a worker there is nothing to emit events, so the visible state is derived in
+  // render (same adjust-on-prop pattern as the swap reset above): cache check still running →
+  // neutral spinner; known not-downloaded → the explicit download CTA. Cloud models and the
+  // "no selection yet" gap are untouched (their status comes from elsewhere).
+  const idleStatus =
+    !wantWorker && isLocal
+      ? downloaded === false
+        ? ('needs-download' as const)
+        : ('checking-backend' as const)
+      : undefined
+  if (idleStatus && state.status !== idleStatus) {
+    setState({ status: idleStatus })
+  }
+
   useEffect(() => {
-    // Wait until the persisted model choice has resolved before creating the worker (avoids
-    // loading the default and immediately swapping it). Cloud models never get a worker.
-    if (!selectedModelId) return
-    if (isCloudModel(getModelSpec(selectedModelId))) return
+    // The worker exists only for a local model that is already cached (auto-load, pre-v13
+    // behaviour) or whose download the user explicitly requested (v13 opt-in). Waiting for the
+    // persisted choice / cache check to resolve also avoids loading a model just to swap it.
+    if (!wantWorker || !selectedModelId) return
 
     // Fresh worker for this model. Reset all download accumulators so a swap doesn't mix the new
     // model's progress with the previous model's file entries.
@@ -153,9 +188,13 @@ export function useLocalBackend(
           let totalBytes = 0
           for (const f of filesRef.current.values()) totalBytes += f.total
           if (totalBytes > 0 && selectedModelId) {
-            void chrome.storage.local.set({
-              [modelCacheKey(selectedModelId)]: totalBytes
-            })
+            // Remove-then-set: a re-download after cache eviction measures the SAME size, and
+            // storage.onChanged doesn't fire on identical writes — the remove guarantees the
+            // event `useDownloadedModelIds` relies on to re-check the cache.
+            const key = modelCacheKey(selectedModelId)
+            void chrome.storage.local
+              .remove(key)
+              .then(() => chrome.storage.local.set({ [key]: totalBytes }))
           }
           // MODEL_READY fires once per worker load and never during a run (swaps are blocked while
           // busy), so it's always safe to land in ready — this also clears a stale summary on swap.
@@ -218,7 +257,7 @@ export function useLocalBackend(
       worker.terminate()
       workerRef.current = null
     }
-  }, [renderSummarizing, selectedModelId])
+  }, [renderSummarizing, selectedModelId, wantWorker])
 
   const start = useCallback(async () => {
     setState({ status: 'extracting' })
@@ -251,5 +290,23 @@ export function useLocalBackend(
     worker.postMessage({ type: 'CANCEL', requestId } satisfies WorkerRequest)
   }, [])
 
-  return { state, start, cancel, modelSizeBytes }
+  const requestDownload = useCallback(() => {
+    setDownloadRequested(true)
+  }, [])
+
+  // Mid-download there is no requestId to CANCEL — terminating the worker is the abort
+  // mechanism (also frees whatever it allocated). Flipping the gate off runs the effect
+  // cleanup (terminate is idempotent) and the derived-state effect lands in `needs-download`.
+  const cancelDownload = useCallback(() => {
+    setDownloadRequested(false)
+  }, [])
+
+  return {
+    state,
+    start,
+    cancel,
+    requestDownload,
+    cancelDownload,
+    modelSizeBytes
+  }
 }

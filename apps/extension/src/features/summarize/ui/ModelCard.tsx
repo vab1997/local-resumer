@@ -8,15 +8,18 @@ import {
   type ModelSpec
 } from '@/src/shared/models'
 import { memo } from 'react'
-import { formatBytes } from '../format'
+import { formatModelSize } from '../format'
 import { WebGpuInfoTooltip } from './WebGpuInfo'
 
 export const ModelCard = memo(function ModelCard({
   spec,
-  modelSizeBytes
+  modelSizeBytes,
+  downloaded
 }: {
   spec: ModelSpec
   modelSizeBytes?: number
+  /** Cache-check verdict (local models): true/false once known, undefined while checking. */
+  downloaded?: boolean
 }) {
   const cloud = isCloudModel(spec)
   return (
@@ -56,9 +59,22 @@ export const ModelCard = memo(function ModelCard({
           ) : (
             <>
               <Badge variant="success">{i18n.t('card.localBadge')}</Badge>
-              {modelSizeBytes ? (
-                <Badge variant="outline">{formatBytes(modelSizeBytes)}</Badge>
-              ) : null}
+              {/* The size is only a label; whether it's DOWNLOADED comes from the cache check
+                  (the measured size survives cache eviction and would lie). */}
+              <Badge variant="outline">
+                {formatModelSize(spec, modelSizeBytes)}
+              </Badge>
+              {downloaded === true && (
+                <Badge variant="outline">{i18n.t('card.downloaded')}</Badge>
+              )}
+              {downloaded === false && (
+                <Badge
+                  variant="outline"
+                  className="border-warning/40 text-warning"
+                >
+                  {i18n.t('card.notDownloaded')}
+                </Badge>
+              )}
             </>
           )}
         </div>

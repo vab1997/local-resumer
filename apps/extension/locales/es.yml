@@ -7,6 +7,8 @@ actionTitle: Abrir ArticleLens
 status:
   checking: Verificando dispositivo…
   downloading: Descargando modelo…
+  needsDownload: Modelo sin descargar
+  chooseModel: Elegí un modelo
   ready: Listo
   needsKey: Falta API key
   extracting: Leyendo artículo…
@@ -19,6 +21,21 @@ footer:
   summarizeAgain: Resumir de nuevo
   working: Trabajando…
   cancel: Cancelar
+  download: Descargar modelo · $1
+  cancelDownload: Cancelar descarga
+
+# Menú de elección de modelo en primera apertura (ModelChooser, v13)
+chooser:
+  title: ¿Cómo querés resumir?
+  intro: On-device es privado y gratis (descarga única). Cloud responde al instante — con key de OpenAI o Anthropic es lo más rápido; sin key paga, OpenRouter ofrece modelos free.
+  onDeviceGroup: On-device · privado, gratis
+  noWebGpu: Requiere WebGPU — no disponible en este dispositivo. Los modelos Cloud de abajo funcionan normal.
+  openrouterGroup: OpenRouter · modelos free
+  openrouterNote: ¿Sin key paga? Creá una key gratis en openrouter.ai y usalos sin costo.
+  paidGroup: Cloud · tu API key · lo más rápido
+  recommended: Recomendado
+  current: Actual
+  change: Cambiar modelo o proveedor
 
 checking:
   title: Verificando tu dispositivo…
@@ -36,6 +53,11 @@ downloading:
   title: Descargando el modelo…
   note: Solo la primera vez — queda en caché.
   starting: Iniciando…
+  keepOpen: Mantené este panel abierto — cerrarlo corta la descarga (los archivos terminados se conservan, así que al reintentar retoma donde quedó).
+
+needsDownload:
+  hint: Este modelo corre en tu dispositivo y requiere una descarga única.
+  detail: No se descarga nada hasta que toques el botón de descarga. ¿Preferís no descargar? Elegí un modelo Cloud en el selector.
 
 readyHint: Abrí un artículo y después resumilo.
 needsKeyHint: Agregá tu API key arriba para usar este modelo.
@@ -81,10 +103,6 @@ openaiAccess:
   step4: Cerrá el panel de OpenAI y reintentá.
 
 selector:
-  aria: Modelo
-  onDevice: En el dispositivo
-  cloudProviderGroup: Cloud · $1 (envía el texto al proveedor)
-  openrouterGroup: OpenRouter · Modelos gratis (requiere API key)
   cached: en caché
   free: Gratis
   per1M: por 1M
@@ -96,6 +114,8 @@ card:
   free: Gratis
   freeNote: Nivel gratuito — solicitudes diarias limitadas; el modelo puede no estar disponible temporalmente.
   per1MTok: por 1M tok
+  downloaded: Descargado
+  notDownloaded: No descargado
   cloudDesc: Corre en $1. El texto del artículo se envía al proveedor.
   localDesc: Lee el artículo en tu GPU. Nada sale de tu dispositivo.
 

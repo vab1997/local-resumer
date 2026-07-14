@@ -23,6 +23,12 @@ export type SummaryState =
       totalBytes?: number
     }
   | { status: 'ready' }
+  /**
+   * A local model is selected but its weights are not in the browser cache (v13). Nothing is
+   * fetched in this state — the footer shows an explicit "Download model" CTA instead of
+   * Summarize, and `requestDownload()` is the only way out (into `downloading`).
+   */
+  | { status: 'needs-download' }
   /** A cloud model is selected but its provider has no stored API key — block until the user adds one. */
   | { status: 'needs-key'; provider: CloudProvider }
   | { status: 'extracting' }
