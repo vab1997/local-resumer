@@ -1,3 +1,5 @@
+import { isLocalModel, type ModelSpec } from '@/src/shared/models'
+
 /** Human-readable elapsed time, e.g. 2400 -> "2.4 s", 72000 -> "1m 12s". */
 export function formatDuration(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) return '—'
@@ -21,6 +23,18 @@ export function formatCost(usd: number): string {
 export function formatTokens(n: number): string {
   if (!Number.isFinite(n) || n < 0) return '—'
   return `${n.toLocaleString('en-US')} tokens`
+}
+
+/**
+ * A local model's download size for labels: the measured size when one was recorded, else the
+ * registry estimate ("~2 GB"). Cloud models have no size — undefined.
+ */
+export function formatModelSize(
+  spec: ModelSpec,
+  measuredBytes?: number
+): string | undefined {
+  if (measuredBytes) return formatBytes(measuredBytes)
+  return isLocalModel(spec) ? `~${spec.downloadGB} GB` : undefined
 }
 
 /** Human-readable byte size, e.g. 2_013_265_920 -> "1.9 GB". */

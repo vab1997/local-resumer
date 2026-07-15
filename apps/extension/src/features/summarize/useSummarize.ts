@@ -18,12 +18,14 @@ import { useLocalBackend } from './useLocalBackend'
  */
 export function useSummarize(
   selectedModelId: string | undefined,
-  apiKey: string | null | undefined
+  apiKey: string | null | undefined,
+  /** Cache-check verdict for the selected model (local only): tri-state from the panel. */
+  downloaded: boolean | undefined
 ) {
   const spec = selectedModelId ? getModelSpec(selectedModelId) : undefined
   const isCloud = spec ? isCloudModel(spec) : false
 
-  const local = useLocalBackend(selectedModelId)
+  const local = useLocalBackend(selectedModelId, downloaded)
   const cloud = useCloudBackend(spec, apiKey)
   const active = isCloud ? cloud : local
 
@@ -31,6 +33,9 @@ export function useSummarize(
     state: active.state,
     summarize: active.start,
     cancel: active.cancel,
+    // Download opt-in is a local-model concept (v13); no-ops for cloud selections.
+    requestDownload: local.requestDownload,
+    cancelDownload: local.cancelDownload,
     // The size badge is a local-model concept; cloud models resolve to undefined there.
     modelSizeBytes: local.modelSizeBytes
   }

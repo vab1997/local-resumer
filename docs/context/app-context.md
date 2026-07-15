@@ -126,8 +126,23 @@ chunking), `tokenizer.ts` (token counting), `parse.ts` (Markdown → summary).
 | v10 | **Rename → ArticleLens** (name no longer matched local+cloud reality): manifest/locales, panel title, error strings, `package.json` (`article-lens`), README repositioned local-first + cloud, CLAUDE/AGENT goal, GitHub repo rename; brand icons (dark squircle, white mark)      | `docs/plans/v10-rename-articlelens.md`                              |
 | v11 | **Publish prep**: content script → runtime-registered, injected per run (`scripting.executeScript`); host access → `optional_host_permissions` (one prompt on first Summarize; fixes pre-install-page bug); v1.0.0; store copy (`docs/store/`) + promo tile; privacy policy pending | `docs/plans/v11-publish-prep.md`                                    |
 | v12 | **Monorepo + web**: pnpm workspace `apps/extension` + `apps/web`; site Astro 6 + Tailwind v4 (dark terminal style, mirror of skillstui.sh) with landing + privacy EN/ES (`/privacy`, `/es/privacy`); deploys to Vercel (root dir `apps/web`, provisional article-lens-web.vercel.app)   | `docs/plans/v12-monorepo-web.md`                                    |
+| v13 | **First-open model choice (BUILT, browser QA pending)**: no auto-download on first open — chooser menu (on-device → OpenRouter free → paid cloud, one Recommended per group, on-device disabled sans WebGPU), explicit download CTA (one-step `LOAD_MODEL`, cancellable, coarse resume), Cache-API downloaded-check (`model-cache.ts`, advisory), no `DEFAULT_MODEL_ID` fallback + implicit migration, "⇄ Change model or provider" (dropdown selector deleted — eager panel 313 kB), Vitest (first test infra: entry-state + model-cache seams, 25 tests). 1.1.0. Effort trail: `docs/efforts/first-open-model-choice/` | `docs/plans/v13-first-open-model-choice.md`                         |
 
 ## Current state & deferred
+
+**v13 BUILT (2026-07-14) — browser QA pending (blocking release):** the first-open
+auto-download is gone. Chooser menu on first run; explicit download CTA; worker effect gated on
+`wantWorker = local && (downloaded || downloadRequested)` (collapsed boolean — the
+false→true flip at MODEL_READY must not recreate the worker); downloaded-check against Cache
+API `'transformers-cache'` (advisory, `model-cache.ts`; measured size is label-only, written
+remove-then-set so re-downloads still fire onChanged); selection tri-state
+(`undefined`=loading/`null`=none/id, stale id ⇒ null) with implicit adoption (never without
+WebGPU); chooser is the single selection entry (dropdown + Radix Select deleted ⇒ eager panel
+313 kB); backends follow the SELECTION, not the visible view (reopened chooser must not tear
+down the live worker). Vitest suite (25) covers the entry-state + cache-check seams. Version
+1.1.0, zip built. **Pending: the 9 QA scenarios in
+`docs/efforts/first-open-model-choice/qa-v13.md`** — then store upload (listing copy updated,
+release notes in `docs/store/release-notes-1.1.0.md`).
 
 **Works:** local WebGPU summarization, short + long (map-reduce) articles, faithful structured
 output, `.md` export, cancel, metrics, polished UI, **model selector + hardware-feasibility bar**
@@ -213,8 +228,12 @@ session memory dir indexed by `MEMORY.md` — separate from this doc.
 
 ## Workflow (mirror of CLAUDE.md — keep in sync)
 
-For every new implementation plan:
-
-1. **Grill** the approach with `/grill-me`, analyzing options for the best implementation.
-2. **Save** the plan to `docs/plans/` before implementing.
-3. **Update this file** (`docs/context/app-context.md`) so all sessions stay in sync.
+**Default pipeline** (first used in v13): `/wayfinder` → `/to-spec` → `/to-tickets` →
+`/implement` (one implementation ticket per fresh session, working the dependency frontier).
+Each effort lives in **one folder, `docs/efforts/<slug>/`**: `map.md` (wayfinder map) +
+`tickets/` (decision tickets + resolutions) + `assets/` (research/prototype outputs) +
+`spec.md` (PRD) + `issues/` (implementation tickets, numbered in dependency order). That folder
+IS the local-markdown issue tracker for those skills. Plans stay in the historical
+`docs/plans/` series, cross-linked with the effort folder. Small changes that skip the pipeline
+still grill via `/grill-me` + save a plan. Always update this file after planning / each
+iteration so all sessions stay in sync.

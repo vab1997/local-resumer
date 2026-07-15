@@ -9,6 +9,8 @@ actionTitle: Open ArticleLens
 status:
   checking: Checking device…
   downloading: Downloading model…
+  needsDownload: Model not downloaded
+  chooseModel: Choose a model
   ready: Ready
   needsKey: API key needed
   extracting: Reading article…
@@ -22,6 +24,21 @@ footer:
   summarizeAgain: Summarize again
   working: Working…
   cancel: Cancel
+  download: Download model · $1
+  cancelDownload: Cancel download
+
+# First-open model chooser (ModelChooser, v13)
+chooser:
+  title: How do you want to summarize?
+  intro: On-device is private and free (one-time download). Cloud answers instantly — with an OpenAI or Anthropic key it's the fastest; without a paid key, OpenRouter offers free models.
+  onDeviceGroup: On-device · private, free
+  noWebGpu: Requires WebGPU — not available on this device. Cloud models below work normally.
+  openrouterGroup: OpenRouter · free models
+  openrouterNote: No paid key? Create a free key at openrouter.ai and use these at no cost.
+  paidGroup: Cloud · your API key · fastest
+  recommended: Recommended
+  current: Current
+  change: Change model or provider
 
 # Per-state body copy (StatusView)
 checking:
@@ -40,6 +57,11 @@ downloading:
   title: Downloading the model…
   note: First run only — cached for next time.
   starting: Starting…
+  keepOpen: Keep this panel open — closing it stops the download (finished files are kept, so retrying resumes where it left off).
+
+needsDownload:
+  hint: This model runs on your device and needs a one-time download.
+  detail: Nothing is fetched until you press the download button. Prefer no download? Pick a Cloud model in the selector.
 
 readyHint: Open an article, then summarize it.
 needsKeyHint: Add your API key above to use this model.
@@ -87,12 +109,8 @@ openaiAccess:
   step3: In "Limits", make sure gpt-4o-mini and gpt-5-mini are enabled.
   step4: Close the OpenAI dashboard and retry.
 
-# Model picker (ModelSelector)
+# Model-row details + memory warning (ModelChooser rows, panel feasibility note)
 selector:
-  aria: Model
-  onDevice: On-device
-  cloudProviderGroup: Cloud · $1 (sends text to the provider)
-  openrouterGroup: OpenRouter · Free models (requires API key)
   cached: cached
   free: Free
   per1M: per 1M
@@ -105,6 +123,8 @@ card:
   free: Free
   freeNote: Free tier — limited requests per day; the model may be temporarily unavailable.
   per1MTok: per 1M tok
+  downloaded: Downloaded
+  notDownloaded: Not downloaded
   cloudDesc: Runs on $1. The article text is sent to the provider.
   localDesc: Reads the article on your GPU. Nothing leaves your device.
 

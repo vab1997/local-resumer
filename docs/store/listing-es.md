@@ -6,10 +6,15 @@ ArticleLens convierte cualquier artículo en un resumen claro y estructurado —
 TL;DR y puntos clave que leés en segundos. Ejecutá la IA completamente en tu dispositivo para
 privacidad total, o conectá tu proveedor cloud favorito.
 
+**Elegís vos, desde la primera apertura**
+Al abrir por primera vez, ArticleLens te muestra las opciones — on-device, modelos gratis de
+OpenRouter, o tu proveedor pago — y no descarga nada hasta que vos lo decidas.
+
 **Privado por defecto — IA local**
-Los modelos por defecto corren 100% en tu navegador con WebGPU. El artículo, el resumen, todo
-queda en tu máquina: sin servidores, sin cuenta, sin tracking. El modelo se descarga una vez
-(~2 GB) y queda en caché para todas las corridas siguientes.
+Los modelos on-device corren 100% en tu navegador con WebGPU. El artículo, el resumen, todo
+queda en tu máquina: sin servidores, sin cuenta, sin tracking. El modelo se descarga una única
+vez (~2 GB, con botón explícito y tamaño a la vista) y queda en caché para todas las corridas
+siguientes.
 
 **O traé tu propio cloud**
 ¿Preferís velocidad o un modelo más grande? Agregá tu propia API key de OpenAI, Anthropic

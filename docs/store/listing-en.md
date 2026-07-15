@@ -6,10 +6,14 @@ ArticleLens turns any article into a clean, structured summary — a title, a TL
 points you can read in seconds. Run the AI entirely on your device for total privacy, or plug in
 your favorite cloud provider.
 
+**You choose, from the very first open**
+On first open ArticleLens shows you the options — on-device, OpenRouter's free models, or your
+paid provider — and downloads nothing until you decide.
+
 **Private by default — local AI**
-The default models run 100% in your browser with WebGPU. The article, the summary, everything
-stays on your machine: no servers, no account, no tracking. The model downloads once (~2 GB) and
-is cached for every later run.
+On-device models run 100% in your browser with WebGPU. The article, the summary, everything
+stays on your machine: no servers, no account, no tracking. The model downloads once (~2 GB,
+behind an explicit button with the size up front) and is cached for every later run.
 
 **Or bring your own cloud**
 Prefer speed or a bigger model? Add your own API key for OpenAI, Anthropic (Claude), or

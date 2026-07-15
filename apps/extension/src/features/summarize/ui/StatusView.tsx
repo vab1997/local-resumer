@@ -1,15 +1,18 @@
 import { i18n } from '#i18n'
 import { Badge } from '@/src/components/ui/badge'
-import { FileText, KeyRound } from 'lucide-react'
+import { Download, FileText, KeyRound } from 'lucide-react'
 import { formatBytes, formatCost, formatTokens } from '../format'
 import type { SummaryState } from '../state'
 import { WebGpuActivationSteps } from './WebGpuInfo'
 
 /** Renders the non-result states with clear, specific copy for each. */
 export function StatusView({
-  state
+  state,
+  cacheLoad
 }: {
   state: Exclude<SummaryState, { status: 'done' }>
+  /** True when `downloading` is really the VRAM load of an already-cached model (v13). */
+  cacheLoad?: boolean
 }) {
   switch (state.status) {
     case 'checking-backend':
@@ -68,9 +71,32 @@ export function StatusView({
             {bytes ?? i18n.t('downloading.starting')}
             {pct !== undefined ? ` · ${pct}%` : ''}
           </p>
+          {/* The download lives in the panel document — closing it kills the transfer (v13).
+              Suppressed for cache loads: nothing is downloading there. */}
+          {!cacheLoad && (
+            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-warning">
+              {i18n.t('downloading.keepOpen')}
+            </p>
+          )}
         </div>
       )
     }
+
+    case 'needs-download':
+      return (
+        <div className="flex flex-col gap-2">
+          <Badge
+            variant="outline"
+            className="gap-1.5 py-1 font-normal text-muted-foreground"
+          >
+            <Download className="size-3.5" />
+            {i18n.t('needsDownload.hint')}
+          </Badge>
+          <p className="text-xs text-muted-foreground">
+            {i18n.t('needsDownload.detail')}
+          </p>
+        </div>
+      )
 
     case 'ready':
       return (
