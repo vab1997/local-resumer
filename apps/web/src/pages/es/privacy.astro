@@ -1,5 +1,4 @@
 ---
-import Footer from '@/components/footer.astro'
 import Layout from '@/layouts/Layout.astro'
 
 const sections = [
@@ -39,16 +38,7 @@ const sections = [
   description="Política de privacidad de ArticleLens: local por defecto, cloud solo si optás con tu propia key, cero telemetría."
   path="/es/privacy"
 >
-  <main
-    class="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 px-6 py-12 text-sm"
-  >
-    <a
-      href="/"
-      class="text-muted-foreground/80 hover:text-muted-foreground text-xs tracking-widest uppercase transition-colors"
-    >
-      ← ArticleLens
-    </a>
-
+  <main class="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16 text-sm">
     <div>
       <h1 class="mb-2 text-2xl font-bold text-white">Política de Privacidad</h1>
       <p class="text-zinc-500">Fecha de vigencia: 9 de julio de 2026</p>
@@ -70,13 +60,5 @@ const sections = [
         ))
       }
     </div>
-
-    <Footer
-      class="mt-8"
-      privacyHref="/es/privacy"
-      privacyLabel="Privacidad"
-      altLangHref="/privacy"
-      altLangLabel="English"
-    />
   </main>
 </Layout>

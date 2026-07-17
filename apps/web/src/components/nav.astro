@@ -1,0 +1,70 @@
+---
+import { Puzzle } from '@lucide/astro'
+import { getAltLocalePath, getHomePath, useTranslations } from '@/i18n/utils'
+import { defaultLocale, type Locale } from '@/i18n/ui'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+const home = getHomePath(locale)
+// Anchors are absolute to the locale home so they resolve from any page (once the
+// sections land in ticket 02). The switch maps the current route to the other locale.
+const altHref = getAltLocalePath(Astro.url.pathname)
+
+const anchors = [
+  { href: `${home}#privacy`, label: t('nav.privacy') },
+  { href: `${home}#how-it-works`, label: t('nav.how') },
+  { href: `${home}#models`, label: t('nav.models') }
+]
+---
+
+<header class="glass-nav">
+  <nav
+    class="mx-auto flex h-full max-w-6xl items-center justify-between gap-4 px-6"
+  >
+    <a
+      href={home}
+      class="text-ink flex items-center gap-2.5 text-[15px] font-semibold"
+    >
+      <img
+        src="/icon-128.png"
+        alt="ArticleLens"
+        width="28"
+        height="28"
+        class="size-7 rounded-[8px]"
+      />
+      ArticleLens
+    </a>
+
+    <div class="hidden items-center gap-7 md:flex">
+      {
+        anchors.map((a) => (
+          <a
+            href={a.href}
+            class="text-muted hover:text-ink text-sm transition-colors duration-150"
+          >
+            {a.label}
+          </a>
+        ))
+      }
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-3">
+      <a
+        href={altHref}
+        aria-label={t('nav.switchAria')}
+        class="btn-ghost px-2.5 py-1.5 text-xs font-medium tracking-wide"
+      >
+        {t('nav.switchLabel')}
+      </a>
+      <a
+        href="https://chromewebstore.google.com/detail/kchemponejhcgbnchebgmfonoddiklhn"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium"
+      >
+        <Puzzle class="size-4" />
+        <span class="hidden sm:inline">{t('nav.cta')}</span>
+      </a>
+    </div>
+  </nav>
+</header>

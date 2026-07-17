@@ -134,7 +134,16 @@ chunking), `tokenizer.ts` (token counting), `parse.ts` (Markdown → summary).
 wayfinder CERRADO (6/6 tickets el mismo día); spec redactada
 ([spec.md](../efforts/web-redesign/spec.md)) + **6 tickets de implementación en
 `web-redesign/issues/` (dependency order); siguiente paso: `/implement` uno por sesión.**
-Frontier inicial: 01 (identidad + shell i18n). Orden: 01 → 02 → {03, 05} → 04 → 06. Decidido: landing
+Orden: 01 → 02 → {03, 05} → 04 → 06. **Ticket 01 IMPLEMENTADO (2026-07-17, staged, sin
+commit)**: tokens Óptica en `global.css` (paleta/ink/acento `#6ea8fe`/radios/motion + backdrop
+radiales+grain, body pasa a Geist sans, mono reservado a números), i18n nativo de Astro
+(`prefixDefaultLocale:false`; EN `/`, ES `/es/`), diccionarios TS compartidos en `src/i18n/`
+(`ui.ts` mismas keys + `utils.ts` con `getAltLocalePath` round-trip, `useTranslations`), nav glass
+sticky 64px (`src/components/nav.astro`) + footer de columnas (`site-footer.astro`) montados en
+`Layout.astro` (metadata/`lang`/`og:locale`/canonical/JSON-LD por locale), home = placeholder de
+texto (`landing.astro`, ambos locales; secciones = ticket 02), privacy re-cableada al shell nuevo
+(footer viejo `footer.astro` borrado; re-tokenización de su piel = ticket posterior). `build:web` +
+`lint:web` verdes, 4 rutas emiten. Frontier siguiente: **02**. Decidido: landing
 multi-sección EN+ES (hero → privacidad/stat-row → 4 pasos → "elige tu modelo" 3 cards → banda
 open source → CTA; nav glass, footer columnas, i18n nativo Astro) + privacy re-tokenizada (cero
 motion); identidad **B "Óptica"**: dark-only, Geist, canvas `#0b0d0e`, acento `#6ea8fe` (el

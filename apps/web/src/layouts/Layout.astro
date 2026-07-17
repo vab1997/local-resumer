@@ -1,6 +1,10 @@
 ---
 import '../styles/global.css'
 import Analytics from '@vercel/analytics/astro'
+import Nav from '@/components/nav.astro'
+import SiteFooter from '@/components/site-footer.astro'
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
 
 // Provisional Vercel domain — swap for the real one when a custom domain lands.
 export const SITE = 'https://article-lens-web.vercel.app'
@@ -8,37 +12,43 @@ export const SITE = 'https://article-lens-web.vercel.app'
 interface Props {
   title?: string
   description?: string
-  /** Page path for the canonical URL, e.g. '/privacy'. */
+  /** Page path for the canonical URL, e.g. '/privacy'. Defaults to the current route. */
   path?: string
 }
 
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+
 const {
-  title = 'ArticleLens — AI Article Summarizer',
-  description = 'AI-powered browser extension that turns any article into a clean, structured summary. Run models locally for privacy or use your favorite cloud provider.',
-  path = '/'
+  title = t('meta.title'),
+  description = t('meta.description'),
+  path = Astro.url.pathname
 } = Astro.props
+
+const ogLocale = t('meta.ogLocale')
+const canonical = SITE + path
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
+<html lang={locale} class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="canonical" href={SITE + path} />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#000" />
+    <meta name="theme-color" content="#0b0d0e" />
     <meta name="robots" content="index, follow" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={SITE + path} />
+    <meta property="og:url" content={canonical} />
     <meta property="og:image" content={SITE + '/icon-128.png'} />
     <meta property="og:image:alt" content={title} />
     <meta property="og:site_name" content="ArticleLens" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={ogLocale} />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@victorbejas" />
     <meta name="twitter:title" content={title} />
@@ -51,7 +61,8 @@ const {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
         name: 'ArticleLens',
-        url: SITE,
+        url: canonical,
+        inLanguage: locale,
         applicationCategory: 'BrowserApplication',
         operatingSystem: 'Any',
         description: description,
@@ -69,7 +80,11 @@ const {
     />
   </head>
   <Analytics />
-  <body class="min-h-screen bg-black font-mono text-zinc-300">
-    <slot />
+  <body class="flex min-h-screen flex-col">
+    <Nav />
+    <div class="flex-1">
+      <slot />
+    </div>
+    <SiteFooter />
   </body>
 </html>

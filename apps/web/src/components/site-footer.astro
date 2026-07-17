@@ -1,0 +1,108 @@
+---
+import { getHomePath, useTranslations } from '@/i18n/utils'
+import { defaultLocale, type Locale } from '@/i18n/ui'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+const home = getHomePath(locale)
+// Both privacy policies exist as physical routes; link each language to its own.
+const privacyHref = locale === 'es' ? '/es/privacy' : '/privacy'
+
+const product = [
+  {
+    label: t('footer.chromeStore'),
+    href: 'https://chromewebstore.google.com/detail/kchemponejhcgbnchebgmfonoddiklhn',
+    external: true
+  },
+  {
+    label: t('footer.github'),
+    href: 'https://github.com/vab1997/article-lens',
+    external: true
+  }
+]
+const legal = [
+  { label: t('footer.privacy'), href: privacyHref, external: false }
+]
+const languages = [
+  { label: t('footer.langEnglish'), href: '/', external: false },
+  { label: t('footer.langSpanish'), href: '/es/', external: false }
+]
+
+const columns = [
+  { title: t('footer.colProduct'), links: product },
+  { title: t('footer.colLegal'), links: legal },
+  { title: t('footer.colLanguage'), links: languages }
+]
+---
+
+<footer class="border-hairline border-t">
+  <div
+    class="mx-auto grid max-w-6xl grid-cols-2 gap-10 px-6 py-14 sm:grid-cols-2 md:grid-cols-4"
+  >
+    <div class="col-span-2 max-w-xs sm:col-span-2 md:col-span-1">
+      <a
+        href={home}
+        class="text-ink flex items-center gap-2.5 text-[15px] font-semibold"
+      >
+        <img
+          src="/icon-128.png"
+          alt="ArticleLens"
+          width="28"
+          height="28"
+          class="size-7 rounded-[8px]"
+        />
+        ArticleLens
+      </a>
+      <p class="text-faint mt-3 text-sm">{t('footer.tagline')}</p>
+    </div>
+
+    {
+      columns.map((col) => (
+        <div>
+          <p class="eyebrow mb-4">{col.title}</p>
+          <ul class="space-y-2.5">
+            {col.links.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  {...(link.external
+                    ? { target: '_blank', rel: 'noopener noreferrer' }
+                    : {})}
+                  class="text-muted hover:text-ink text-sm transition-colors duration-150"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="border-hairline border-t">
+    <div
+      class="text-faint mx-auto flex max-w-6xl items-center justify-between px-6 py-5 text-xs"
+    >
+      <span>{t('footer.rights')}</span>
+      <div class="flex items-center gap-4">
+        <a
+          href="https://www.victorbejas.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-muted transition-colors duration-150"
+        >
+          {t('footer.portfolio')}
+        </a>
+        <a
+          href="https://x.com/victorbejas"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-muted transition-colors duration-150"
+        >
+          @victorbejas
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
