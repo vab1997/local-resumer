@@ -130,27 +130,39 @@ chunking), `tokenizer.ts` (token counting), `parse.ts` (Markdown → summary).
 
 ## Current state & deferred
 
-**Effort en curso (2026-07-17): rediseño de la web** — `docs/efforts/web-redesign/`. **Mapa
-wayfinder CERRADO (6/6 tickets el mismo día); spec redactada
-([spec.md](../efforts/web-redesign/spec.md)) + **6 tickets de implementación en
-`web-redesign/issues/` (dependency order); siguiente paso: `/implement` uno por sesión.**
-Orden: 01 → 02 → {03, 05} → 04 → 06. **Ticket 01 IMPLEMENTADO (2026-07-17, staged, sin
-commit)**: tokens Óptica en `global.css` (paleta/ink/acento `#6ea8fe`/radios/motion + backdrop
-radiales+grain, body pasa a Geist sans, mono reservado a números), i18n nativo de Astro
-(`prefixDefaultLocale:false`; EN `/`, ES `/es/`), diccionarios TS compartidos en `src/i18n/`
-(`ui.ts` mismas keys + `utils.ts` con `getAltLocalePath` round-trip, `useTranslations`), nav glass
-sticky 64px (`src/components/nav.astro`) + footer de columnas (`site-footer.astro`) montados en
-`Layout.astro` (metadata/`lang`/`og:locale`/canonical/JSON-LD por locale), home = placeholder de
-texto (`landing.astro`, ambos locales; secciones = ticket 02), privacy re-cableada al shell nuevo
-(footer viejo `footer.astro` borrado; re-tokenización de su piel = ticket posterior). `build:web` +
-`lint:web` verdes, 4 rutas emiten. Frontier siguiente: **02**. Decidido: landing
-multi-sección EN+ES (hero → privacidad/stat-row → 4 pasos → "elige tu modelo" 3 cards → banda
-open source → CTA; nav glass, footer columnas, i18n nativo Astro) + privacy re-tokenizada (cero
-motion); identidad **B "Óptica"**: dark-only, Geist, canvas `#0b0d0e`, acento `#6ea8fe` (el
-primary de la extensión), headlines two-tone, gradient borders con glow de esquina, grain, sin
-drop-shadows (tokens completos en ticket 04); stack de animación **CSS-first + Motion vanilla**
-(~19–20 kB gzip, sin React; ticket 02); hero = demo animado browser+artículo, loop ~9 s con
-hover-pausa (coreografía en ticket 05). Skills por sesión: `/emil-design-eng`,
+**Effort COMPLETO (2026-07-18): rediseño de la web** — `docs/efforts/web-redesign/`. Mapa
+wayfinder + spec + 6 tickets de implementación, **los 6 IMPLEMENTADOS y verificados (staged, sin
+commit — el usuario commitea)**. Identidad **B "Óptica"**: dark-only, Geist, canvas `#0b0d0e`,
+acento `#6ea8fe` (el primary de la extensión), headlines two-tone, gradient borders con glow de
+esquina, grain, sin drop-shadows (tokens en `global.css`).
+
+- **01 shell**: tokens Óptica, i18n nativo de Astro (EN `/`, ES `/es/`), diccionarios TS
+  compartidos (`src/i18n/ui.ts` mismas keys + `utils.ts` `getAltLocalePath`), nav glass 64px +
+  footer de columnas en `Layout.astro` (metadata/`lang`/canonical por locale).
+- **02 landing**: `landing.astro` multi-sección EN/ES — hero → privacidad (stat-row 4 números) →
+  cómo funciona (4 pasos) → "elige tu modelo" (3 cards, On-device destacada) → banda open
+  source → CTA. Primitivos `.headline`/`.card`/`.card-hot`/`.panel-frame` en `@layer components`.
+- **03 animación**: `motion` instalado; reveals on-scroll via `inView` + clases CSS con stagger
+  (`src/scripts/reveal.ts`, `[data-reveal]` con `--i`); progressive enhancement `html.js`;
+  micro-interactions CSS; `prefers-reduced-motion` neutraliza todo. JS ~0.5 kB gz.
+- **04 hero demo**: `hero-demo.astro` + `hero-demo.ts` — browser mock + artículo + panel,
+  coreografía ~9 s en loop (press → progreso → streaming título/TL;DR con caret → puntos →
+  métricas → hold → fade), Motion `motion/mini` `animate` + typing driver, hover-pausa +
+  pausa off-screen, reduced-motion = estado final estático, mobile oculta el artículo. JS
+  ~3.8 kB gz. **Gotcha resuelto**: el scope de Astro sube specificity, así que `html.js .hd-x`
+  le ganaba a `.hd-x.is-on` — las reglas `.is-on` van prefijadas con `html.js`.
+- **05 privacy**: `privacy.astro` compartido, re-tokenizado, keys `policy.*` (namespace distinto
+  de la sección `privacy.*` de la landing), texto legal intacto, hereda nav/footer, cero motion.
+- **06 tests+QA**: Vitest en `apps/web` (primer test infra ahí; `src/i18n/__tests__/ui.test.ts`,
+  5 tests: paridad de keys EN/ES, no-vacíos, round-trip del switch), scripts `test`/`test:web`,
+  focus-visible ring de acento en `global.css`. Suite total 30 (ext 25 + web 5).
+
+`build:web` + `lint:web` + `test` verdes; 4 rutas emiten. QA en browser: demo/hover-pausa,
+reveals, ambos idiomas + switch verificados live; reduced-motion + responsive ≤768px +
+focus-visible verificados por fuente/CSS build (el browser automatizado no emula reduced-motion,
+no redimensiona el viewport ni dispara `:focus-visible`). Lighthouse CLI no disponible — el
+presupuesto de JS de animación (~4 kB gz total, muy debajo de 20 kB) se midió por bundle.
+**Pendiente: commit del usuario + deploy Vercel.** Skills del efecto: `/emil-design-eng`,
 `/web-animation-design`, `/animation-vocabulary`.
 
 **v13 BUILT (2026-07-14) — browser QA pending (blocking release):** the first-open

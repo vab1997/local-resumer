@@ -1,47 +1,309 @@
 ---
-// Placeholder landing — minimal text hero only. The real multi-section landing (demo,
-// stat-row, steps, model cards, open-source band, CTA) lands in ticket 02. Renders both
-// locales from the shared dictionary via Astro.currentLocale.
+// Multi-section landing — both locales from the shared dictionary. Layout via Tailwind;
+// glow/gradient-border via the @layer components primitives in global.css (.panel-frame,
+// .card, .card-hot, .headline). The hero shows the animated side-panel demo (HeroDemo).
+// Scroll reveals: each section is a [data-reveal-group]; its [data-reveal] children
+// fade/rise in with a --i stagger when the group enters the viewport.
 import { Puzzle } from '@lucide/astro'
 import GithubIcon from '@/components/github-icon.astro'
+import HeroDemo from '@/components/hero-demo.astro'
 import { defaultLocale, type Locale } from '@/i18n/ui'
 import { useTranslations } from '@/i18n/utils'
 
 const locale = (Astro.currentLocale as Locale) ?? defaultLocale
 const t = useTranslations(locale)
+
+const CHROME_STORE =
+  'https://chromewebstore.google.com/detail/kchemponejhcgbnchebgmfonoddiklhn'
+const GITHUB = 'https://github.com/vab1997/article-lens'
+
+const stats = [
+  { num: t('privacy.stat1Num'), label: t('privacy.stat1Label') },
+  { num: t('privacy.stat2Num'), label: t('privacy.stat2Label') },
+  { num: t('privacy.stat3Num'), label: t('privacy.stat3Label') },
+  { num: t('privacy.stat4Num'), label: t('privacy.stat4Label') }
+]
+
+const steps = [
+  { title: t('how.step1Title'), body: t('how.step1Body') },
+  { title: t('how.step2Title'), body: t('how.step2Body') },
+  { title: t('how.step3Title'), body: t('how.step3Body') },
+  { title: t('how.step4Title'), body: t('how.step4Body') }
+]
+
+const models = [
+  {
+    hot: true,
+    kicker: t('models.localKicker'),
+    title: t('models.localTitle'),
+    body: t('models.localBody'),
+    price: t('models.localPrice'),
+    note: t('models.localNote')
+  },
+  {
+    hot: false,
+    kicker: t('models.freeKicker'),
+    title: t('models.freeTitle'),
+    body: t('models.freeBody'),
+    price: t('models.freePrice'),
+    note: t('models.freeNote')
+  },
+  {
+    hot: false,
+    kicker: t('models.byokKicker'),
+    title: t('models.byokTitle'),
+    body: t('models.byokBody'),
+    price: t('models.byokPrice'),
+    note: t('models.byokNote')
+  }
+]
 ---
 
-<main class="mx-auto max-w-6xl px-6 py-28 sm:py-36">
-  <p class="eyebrow mb-5">{t('hero.eyebrow')}</p>
-  <h1
-    class="text-muted max-w-3xl text-[clamp(40px,7vw,72px)] leading-[1.04] font-medium tracking-[-0.032em]"
-  >
-    {t('hero.titleLead')}<strong class="text-ink font-semibold"
-      >{t('hero.titleStrong')}</strong
+<!-- ============================ HERO ============================ -->
+<section data-reveal-group class="mx-auto max-w-6xl px-6 pt-20 pb-24 sm:pt-28">
+  <div class="mx-auto max-w-3xl text-center">
+    <p data-reveal style="--i: 0" class="eyebrow mb-5 flex justify-center">
+      {t('hero.eyebrow')}
+    </p>
+    <h1
+      data-reveal
+      style="--i: 1"
+      class="headline mx-auto max-w-[18ch] text-[clamp(38px,7vw,68px)] tracking-[-0.032em]"
     >
-  </h1>
-  <p class="text-muted mt-6 max-w-xl text-[17px] leading-[1.6]">
-    {t('hero.sub')}
-  </p>
+      {t('hero.titleLead')}<strong>{t('hero.titleStrong')}</strong>
+    </h1>
+    <p
+      data-reveal
+      style="--i: 2"
+      class="text-muted mx-auto mt-6 max-w-xl text-[17px] leading-[1.6]"
+    >
+      {t('hero.sub')}
+    </p>
+    <div
+      data-reveal
+      style="--i: 3"
+      class="mt-9 flex flex-wrap items-center justify-center gap-3"
+    >
+      <a
+        href={CHROME_STORE}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+      >
+        <Puzzle class="size-4.5" />
+        {t('nav.cta')}
+      </a>
+      <a
+        href={GITHUB}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-ghost inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+      >
+        <GithubIcon class="size-4.5" />
+        {t('footer.github')}
+      </a>
+    </div>
+  </div>
 
-  <div class="mt-9 flex flex-wrap items-center gap-3">
-    <a
-      href="https://chromewebstore.google.com/detail/kchemponejhcgbnchebgmfonoddiklhn"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+  <!-- Animated side-panel demo (ticket 04). -->
+  <div data-reveal style="--i: 4">
+    <HeroDemo />
+  </div>
+</section>
+
+<!-- ========================== PRIVACY ========================== -->
+<section id="privacy" class="border-hairline scroll-mt-24 border-t">
+  <div data-reveal-group class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p data-reveal style="--i: 0" class="eyebrow mb-4">
+      {t('privacy.eyebrow')}
+    </p>
+    <h2
+      data-reveal
+      style="--i: 1"
+      class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]"
     >
-      <Puzzle class="size-4.5" />
-      {t('nav.cta')}
-    </a>
+      {t('privacy.titleLead')}<strong>{t('privacy.titleStrong')}</strong>
+    </h2>
+    <p
+      data-reveal
+      style="--i: 2"
+      class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]"
+    >
+      {t('privacy.lead')}
+    </p>
+
+    <div
+      class="bg-hairline rounded-card border-hairline mt-12 grid grid-cols-2 gap-px overflow-hidden border md:grid-cols-4"
+    >
+      {
+        stats.map((s, i) => (
+          <div data-reveal style={`--i: ${i + 3}`} class="bg-surface-1 p-6">
+            <div class="text-accent font-mono text-[34px] leading-none font-semibold tracking-tight tabular-nums">
+              {s.num}
+            </div>
+            <div class="text-muted mt-2.5 text-[13px] leading-[1.45]">
+              {s.label}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ======================= HOW IT WORKS ======================== -->
+<section id="how-it-works" class="border-hairline scroll-mt-24 border-t">
+  <div data-reveal-group class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p data-reveal style="--i: 0" class="eyebrow mb-4">{t('how.eyebrow')}</p>
+    <h2
+      data-reveal
+      style="--i: 1"
+      class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]"
+    >
+      {t('how.titleLead')}<strong>{t('how.titleStrong')}</strong>
+    </h2>
+
+    <ol class="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        steps.map((step, i) => (
+          <li data-reveal style={`--i: ${i + 2}`}>
+            <span class="text-faint font-mono text-[13px] tabular-nums">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3 class="mt-3 text-[16px] font-semibold tracking-[-0.01em]">
+              {step.title}
+            </h3>
+            <p class="text-muted mt-2 text-[14px] leading-[1.6]">{step.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<!-- ========================== MODELS =========================== -->
+<section id="models" class="border-hairline scroll-mt-24 border-t">
+  <div data-reveal-group class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p data-reveal style="--i: 0" class="eyebrow mb-4">{t('models.eyebrow')}</p>
+    <h2
+      data-reveal
+      style="--i: 1"
+      class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]"
+    >
+      {t('models.titleLead')}<strong>{t('models.titleStrong')}</strong>
+    </h2>
+    <p
+      data-reveal
+      style="--i: 2"
+      class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]"
+    >
+      {t('models.lead')}
+    </p>
+
+    <div class="mt-12 grid gap-4 md:grid-cols-3">
+      {
+        models.map((m, i) => (
+          <div
+            data-reveal
+            style={`--i: ${i + 3}`}
+            class:list={['card', { 'card-hot': m.hot }, 'p-6']}
+          >
+            <p
+              class:list={[
+                'text-[11px] font-semibold tracking-[0.07em] uppercase',
+                m.hot ? 'text-accent' : 'text-faint'
+              ]}
+            >
+              {m.kicker}
+            </p>
+            <h3 class="mt-3 text-[17px] font-semibold tracking-[-0.015em]">
+              {m.title}
+            </h3>
+            <p class="text-muted mt-2 text-[14px] leading-[1.55]">{m.body}</p>
+            <p class="text-ink mt-5 text-[14px] tabular-nums">
+              {m.price}
+              <span class="text-faint"> — {m.note}</span>
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ======================= OPEN SOURCE ========================= -->
+<section class="border-hairline scroll-mt-24 border-t">
+  <div
+    data-reveal-group
+    class="mx-auto flex max-w-6xl flex-col items-start justify-between gap-5 px-6 py-14 sm:flex-row sm:items-center"
+  >
+    <div data-reveal style="--i: 0">
+      <p class="text-ink text-[17px] font-semibold tracking-[-0.01em]">
+        {t('oss.title')}
+      </p>
+      <p class="text-muted mt-1.5 max-w-lg text-[14px] leading-[1.55]">
+        {t('oss.body')}
+      </p>
+    </div>
     <a
-      href="https://github.com/vab1997/article-lens"
+      data-reveal
+      style="--i: 1"
+      href={GITHUB}
       target="_blank"
       rel="noopener noreferrer"
-      class="btn-ghost inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+      class="btn-ghost inline-flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm font-medium"
     >
       <GithubIcon class="size-4.5" />
-      {t('footer.github')}
+      {t('oss.cta')}
     </a>
   </div>
-</main>
+</section>
+
+<!-- ======================== CLOSING CTA ======================== -->
+<section class="border-hairline scroll-mt-24 border-t">
+  <div
+    data-reveal-group
+    class="mx-auto max-w-6xl px-6 py-24 text-center sm:py-32"
+  >
+    <h2
+      data-reveal
+      style="--i: 0"
+      class="headline mx-auto max-w-[20ch] text-[clamp(28px,4.5vw,44px)]"
+    >
+      {t('cta.titleLead')}<strong>{t('cta.titleStrong')}</strong>
+    </h2>
+    <p data-reveal style="--i: 1" class="text-muted mt-4 text-[16px]">
+      {t('cta.sub')}
+    </p>
+    <div
+      data-reveal
+      style="--i: 2"
+      class="mt-8 flex flex-wrap items-center justify-center gap-3"
+    >
+      <a
+        href={CHROME_STORE}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-primary inline-flex items-center gap-2 px-5 py-3 text-sm font-medium"
+      >
+        <Puzzle class="size-4.5" />
+        {t('nav.cta')}
+      </a>
+      <a
+        href={GITHUB}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-ghost inline-flex items-center gap-2 px-5 py-3 text-sm font-medium"
+      >
+        <GithubIcon class="size-4.5" />
+        {t('footer.github')}
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initReveals } from '../scripts/reveal'
+
+  initReveals()
+</script>

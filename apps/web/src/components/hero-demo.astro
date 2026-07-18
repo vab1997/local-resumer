@@ -1,0 +1,434 @@
+---
+// Animated hero demo (ticket 04) — a recreated browser window with the article on the
+// left and the ArticleLens side panel on the right, running the summarize choreography
+// in a loop. DOM is server-rendered in its FINISHED state, so a no-JS or reduced-motion
+// visitor sees a completed summary. When JS is present (html.js, set pre-paint) the panel
+// switches to the animation's initial state and hero-demo.ts drives the loop.
+// Choreography + timings: docs/efforts/web-redesign/tickets/05-prototype-hero-demo.md.
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+
+const article = [
+  t('demo.artP1'),
+  t('demo.artP2'),
+  t('demo.artP3'),
+  t('demo.artP4')
+]
+const points = [
+  { lead: t('demo.point1Lead'), rest: t('demo.point1Rest') },
+  { lead: t('demo.point2Lead'), rest: t('demo.point2Rest') },
+  { lead: t('demo.point3Lead'), rest: t('demo.point3Rest') }
+]
+const metrics = [
+  t('demo.metricTime'),
+  t('demo.metricTokens'),
+  t('demo.metricCost')
+]
+---
+
+<div class="hd-stage" data-hero-demo>
+  <div class="hd-glow" aria-hidden="true"></div>
+  <div class="hd-window panel-frame demo-mask">
+    <div class="hd-chrome">
+      <span class="hd-dots"><span></span><span></span><span></span></span>
+      <span class="hd-url">{t('demo.url')}</span>
+    </div>
+
+    <div class="hd-split">
+      <article class="hd-article" aria-hidden="true">
+        <h4>{t('demo.artTitle')}</h4>
+        <p class="hd-byline">{t('demo.artByline')}</p>
+        {
+          article.map((p, i) => (
+            <p class:list={['hd-apar', { 'hd-dim': i >= 2 }]}>{p}</p>
+          ))
+        }
+      </article>
+
+      <div class="hd-panel" data-panel>
+        <div class="hd-head">
+          <span class="hd-dot"></span>
+          <span class="hd-name">ArticleLens</span>
+          <span class="hd-chip">{t('demo.chip')}</span>
+        </div>
+
+        <button class="hd-run" type="button" data-run>{t('demo.run')}</button>
+
+        <div
+          class="hd-status"
+          data-status
+          data-reading={t('demo.statusReading')}
+          data-summarizing={t('demo.statusSummarizing')}
+        >
+          <span class="hd-spinner"></span>
+          <span class="hd-status-text" data-status-text
+            >{t('demo.statusReading')}</span
+          >
+          <span class="hd-bar"><i data-bar></i></span>
+        </div>
+
+        <div class="hd-out" data-out>
+          <h3 class="hd-title" data-title>{t('demo.title')}</h3>
+          <p class="hd-tldr" data-tldr>{t('demo.tldr')}</p>
+          <ul class="hd-points">
+            {
+              points.map((p) => (
+                <li class="hd-point" data-point>
+                  <span class="hd-tick">→</span>
+                  <span>
+                    <b>{p.lead}</b>
+                    {p.rest}
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
+          <div class="hd-metrics">
+            {
+              metrics.map((m) => (
+                <span class="hd-metric" data-metric>
+                  {m}
+                </span>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { initHeroDemo } from '../scripts/hero-demo'
+
+  const stage = document.querySelector<HTMLElement>('[data-hero-demo]')
+  if (stage) initHeroDemo(stage)
+</script>
+
+<style>
+  .hd-stage {
+    position: relative;
+    margin: 4rem auto 0;
+    max-width: 30rem;
+  }
+  .hd-glow {
+    position: absolute;
+    inset: -2.5rem -4rem auto;
+    height: 70%;
+    pointer-events: none;
+    z-index: -1;
+    background: radial-gradient(
+      50% 45% at 50% 40%,
+      rgb(110 168 254 / 0.13),
+      transparent 70%
+    );
+  }
+  .hd-window {
+    overflow: hidden;
+  }
+  /* Fade the window into the canvas at the bottom (Linear-style mask). */
+  .demo-mask {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 78%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%);
+  }
+
+  /* Browser chrome */
+  .hd-chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid var(--color-hairline);
+    background: rgb(255 255 255 / 2%);
+  }
+  .hd-dots {
+    display: flex;
+    gap: 0.375rem;
+  }
+  .hd-dots span {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: #2c2f31;
+  }
+  .hd-url {
+    flex: 1;
+    max-width: 22rem;
+    margin: 0 auto;
+    padding: 0.25rem 0.75rem;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--color-faint);
+    font-variant-numeric: tabular-nums;
+    background: rgb(255 255 255 / 4%);
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.4rem;
+  }
+
+  /* Split: panel only by default (mobile); article joins ≥761px */
+  .hd-split {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .hd-article {
+    display: none;
+    min-width: 0;
+    padding: 1.6rem 1.75rem;
+    border-right: 1px solid var(--color-hairline);
+  }
+  .hd-article h4 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.35rem;
+  }
+  .hd-byline {
+    font-size: 0.72rem;
+    color: var(--color-faint);
+    margin-bottom: 1rem;
+  }
+  .hd-apar {
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: var(--color-muted);
+    margin-bottom: 0.75rem;
+  }
+  .hd-apar.hd-dim {
+    color: var(--color-faint);
+  }
+
+  @media (min-width: 48rem) {
+    .hd-stage {
+      max-width: 56rem;
+    }
+    .hd-split {
+      grid-template-columns: 1.15fr 1fr;
+    }
+    .hd-article {
+      display: block;
+    }
+  }
+
+  /* Panel */
+  .hd-panel {
+    min-width: 0;
+    padding: 1rem 1.125rem 1.375rem;
+    background: rgb(255 255 255 / 1.2%);
+  }
+  .hd-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .hd-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #34d399;
+  }
+  .hd-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .hd-chip {
+    margin-left: auto;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.66rem;
+    color: var(--color-muted);
+    border: 1px solid var(--color-hairline);
+    border-radius: 999px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Run button — hidden by default (finished state); JS shows it. */
+  .hd-run {
+    display: none;
+    width: 100%;
+    margin: 0.875rem 0 0.125rem;
+    padding: 0.55rem 0;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 550;
+    color: var(--color-accent-fg);
+    background: var(--cta-gradient);
+    border: 0;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+    transition: transform 0.14s ease;
+  }
+  html.js .hd-run {
+    display: block;
+  }
+  .hd-run.is-pressed {
+    transform: scale(0.97);
+    filter: brightness(0.94);
+  }
+
+  /* Status row — shown by JS during the run. */
+  .hd-status {
+    display: none;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0.9rem 0 0.125rem;
+    font-size: 0.74rem;
+    color: var(--color-muted);
+  }
+  .hd-status.is-on {
+    display: flex;
+  }
+  .hd-spinner {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-hairline-strong);
+    border-top-color: var(--color-accent);
+    animation: hd-spin 0.6s linear infinite;
+  }
+  @keyframes hd-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .hd-bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: rgb(255 255 255 / 7%);
+  }
+  .hd-bar i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #5c9bfd, #8fc0ff);
+  }
+
+  /* Output — visible finished state by default; JS hides it to animate. */
+  .hd-out {
+    margin-top: 0.875rem;
+  }
+  html.js .hd-out {
+    opacity: 0;
+  }
+  .hd-title {
+    font-size: 0.97rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.5rem;
+  }
+  .hd-tldr {
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--color-muted);
+    margin-bottom: 0.75rem;
+  }
+  .hd-point {
+    display: flex;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+    margin-bottom: 0.5rem;
+  }
+  .hd-point b {
+    color: var(--color-ink);
+    font-weight: 550;
+  }
+  .hd-tick {
+    color: var(--color-accent);
+    flex-shrink: 0;
+  }
+  /* Points + metrics stagger in via CSS while JS toggles .is-on (0 kB). Hidden only
+     when JS drives the run; a no-JS render shows them in place. */
+  html.js .hd-point {
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity 0.4s var(--motion-reveal-ease),
+      transform 0.4s var(--motion-reveal-ease);
+  }
+  html.js .hd-metric {
+    opacity: 0;
+    transform: scale(0.95);
+    transition:
+      opacity 0.35s var(--motion-reveal-ease),
+      transform 0.35s var(--motion-reveal-ease);
+  }
+  /* html.js prefix keeps specificity level with the hidden rules above so .is-on wins
+     by source order (Astro's scope attribute would otherwise let html.js .hd-point win). */
+  html.js .hd-point.is-on,
+  html.js .hd-metric.is-on {
+    opacity: 1;
+    transform: none;
+  }
+  .hd-metrics {
+    display: flex;
+    gap: 0.45rem;
+    margin-top: 0.875rem;
+  }
+  .hd-metric {
+    padding: 0.2rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--color-faint);
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.375rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Word streaming (title + TL;DR) — spans seeded by JS. */
+  .hd-w {
+    opacity: 0;
+  }
+  .hd-w.is-on {
+    opacity: 1;
+    transition: opacity 0.18s ease;
+  }
+  .hd-caret {
+    display: inline-block;
+    width: 0.4rem;
+    height: 0.9em;
+    margin-left: 1px;
+    vertical-align: -0.1em;
+    background: var(--color-accent);
+    animation: hd-blink 0.9s steps(2, start) infinite;
+  }
+  @keyframes hd-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* Reduced motion: force the finished state, no button/status, no spinner/caret. */
+  @media (prefers-reduced-motion: reduce) {
+    html.js .hd-run {
+      display: none;
+    }
+    html.js .hd-out,
+    html.js .hd-point,
+    html.js .hd-metric {
+      opacity: 1;
+      transform: none;
+    }
+    .hd-status {
+      display: none !important;
+    }
+  }
+</style>

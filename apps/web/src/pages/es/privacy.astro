@@ -1,64 +1,17 @@
 ---
+import Privacy from '@/components/privacy.astro'
 import Layout from '@/layouts/Layout.astro'
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
 
-const sections = [
-  {
-    title: 'Qué procesa ArticleLens',
-    body: 'El único contenido que ArticleLens lee es el texto del artículo de la página que vos explícitamente resumís. Nada se lee en segundo plano: la extensión inyecta su lector en una página solo cuando apretás Resumir, bajo un permiso que Chrome te pide otorgar.'
-  },
-  {
-    title: 'Local por defecto',
-    body: 'Por defecto el modelo de IA corre completamente en tu navegador (WebGPU). El artículo, el resumen y todo lo intermedio quedan en tu dispositivo. Los pesos del modelo se descargan una vez desde el Hugging Face Hub y quedan en la caché del navegador — esa descarga no contiene ninguna información sobre vos ni sobre las páginas que visitás.'
-  },
-  {
-    title: 'El modo cloud es opt-in',
-    body: 'Si — y solo si — elegís un modelo cloud y cargás tu propia API key, el texto del artículo se envía directamente desde tu navegador al proveedor que elegiste (OpenAI, Anthropic u OpenRouter). ArticleLens lo marca explícitamente en la interfaz. No hay servidores intermediarios: no operamos ningún servidor y el texto nunca pasa por nosotros. El proveedor trata esos datos bajo su propia política de privacidad.'
-  },
-  {
-    title: 'API keys',
-    body: 'Tus API keys se guardan solo en el almacenamiento local de extensiones de tu navegador (chrome.storage.local). Se envían exclusivamente al proveedor correspondiente como header de autenticación de tus propias solicitudes, y podés borrarlas en cualquier momento desde el panel.'
-  },
-  {
-    title: 'Qué no recolectamos nunca',
-    body: 'Sin analytics, sin telemetría, sin cuentas, sin cookies, sin historial de navegación, sin datos personales. ArticleLens no tiene backend. El permiso de "historial de navegación" que menciona Chrome se usa para exactamente una cosa: detectar que saliste de una página resumida, para nunca atribuir un resumen al artículo equivocado.'
-  },
-  {
-    title: 'Cambios',
-    body: 'Si esta política cambia, la nueva versión se publica en esta página con la fecha actualizada. El código fuente es público, así que cada afirmación de arriba es verificable.'
-  },
-  {
-    title: 'Contacto',
-    body: '¿Preguntas? Abrí un issue en <a href="https://github.com/vab1997/article-lens" target="_blank" rel="noopener noreferrer" class="font-bold text-white underline underline-offset-2">github.com/vab1997/article-lens</a>.'
-  }
-]
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
 ---
 
 <Layout
-  title="Política de Privacidad — ArticleLens"
-  description="Política de privacidad de ArticleLens: local por defecto, cloud solo si optás con tu propia key, cero telemetría."
+  title={t('policy.metaTitle')}
+  description={t('policy.metaDescription')}
   path="/es/privacy"
 >
-  <main class="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16 text-sm">
-    <div>
-      <h1 class="mb-2 text-2xl font-bold text-white">Política de Privacidad</h1>
-      <p class="text-zinc-500">Fecha de vigencia: 9 de julio de 2026</p>
-    </div>
-
-    <div class="space-y-8">
-      {
-        sections.map((section, i) => (
-          <div class="flex gap-4">
-            <span class="shrink-0 text-zinc-600">[{i + 1}]</span>
-            <div>
-              <p class="mb-1 font-bold text-white">{section.title}</p>
-              <p
-                class="text-muted-foreground/80 leading-relaxed"
-                set:html={section.body}
-              />
-            </div>
-          </div>
-        ))
-      }
-    </div>
-  </main>
+  <Privacy />
 </Layout>

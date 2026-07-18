@@ -126,6 +126,13 @@
     background: var(--color-accent);
     color: var(--color-accent-fg);
   }
+
+  /* Keyboard focus — a visible accent ring on interactive elements (default outline is
+     low-contrast on the dark canvas). Only on keyboard focus, not pointer clicks. */
+  :where(a, button, [tabindex]:not([tabindex='-1'])):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
@@ -184,9 +191,87 @@
     text-transform: uppercase;
     color: var(--color-accent);
   }
+
+  /* Two-tone headline — muted base + white <strong>, the Neon technique. Overrides the
+     base h1/h2 ink color; the emphasized phrase carries the white weight. */
+  .headline {
+    color: var(--color-muted);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+  }
+  .headline strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  /* Elevated panel — transparent border + double background so a blue glow enters from
+     the top-left corner (gradient-border technique). Reused by the hero demo (ticket 04). */
+  .panel-frame {
+    position: relative;
+    border: 1px solid transparent;
+    border-radius: var(--radius-panel);
+    background:
+      linear-gradient(165deg, #16181a, #0d0e10) padding-box,
+      radial-gradient(125% 125% at 0% 0%, var(--glow-accent), rgb(38 40 42) 55%)
+        border-box;
+    box-shadow: var(--edge-highlight);
+  }
+
+  /* Surface card — hairline border + "corner light" (a faint radial anchored top-left)
+     over a diagonal dark gradient. Hover lifts brightness (pointer devices only). */
+  .card {
+    position: relative;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-card);
+    background:
+      radial-gradient(120% 120% at 0 0, rgb(255 255 255 / 4%), transparent 45%),
+      linear-gradient(165deg, var(--color-surface-1), #0d0e10);
+    box-shadow: var(--edge-highlight);
+    transition:
+      filter var(--motion-hover-duration) ease,
+      border-color var(--motion-hover-duration) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .card:hover {
+      filter: brightness(var(--motion-hover-brightness));
+    }
+  }
+
+  /* Highlighted card (the On-device recommendation) — blue corner light + blue gradient
+     border, same glow family as .panel-frame. */
+  .card-hot {
+    border-color: transparent;
+    background:
+      radial-gradient(120% 120% at 0 0, rgb(110 168 254 / 14%), transparent 46%)
+        padding-box,
+      linear-gradient(165deg, #0f1520, #0c0d0e) padding-box,
+      radial-gradient(70% 80% at 0 0, var(--glow-accent), rgb(38 40 42) 58%)
+        border-box;
+  }
+
+  /*
+    Scroll reveals — progressive enhancement. Elements only start hidden once JS is
+    present (html.js is set pre-paint in the layout head), so a no-JS render shows
+    everything. Motion's inView toggles .is-visible; the animation and the per-item
+    stagger (--i) live here, transform/opacity only. Reduced motion neutralizes it below.
+  */
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(var(--motion-reveal-shift));
+    transition:
+      opacity var(--motion-reveal-duration) var(--motion-reveal-ease),
+      transform var(--motion-reveal-duration) var(--motion-reveal-ease);
+    transition-delay: calc(var(--i, 0) * var(--motion-stagger));
+  }
+  .js [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* Reduced motion: kill every transition/animation site-wide. */
+/* Reduced motion: kill every transition/animation site-wide, and show reveal content
+   in its final state (no fade, no shift). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -195,5 +280,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
   }
 }

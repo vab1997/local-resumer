@@ -1,0 +1,46 @@
+---
+// Privacy policy body (ticket 05) — one component, both locales from the shared
+// dictionary. Same simple single-column structure and legal content as before, re-skinned
+// to the "Óptica" identity tokens. Inherits the glass nav + column footer from Layout.
+// No motion — only the hover transition on the contact link.
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+
+const sections = [
+  { title: t('policy.s1Title'), body: t('policy.s1Body') },
+  { title: t('policy.s2Title'), body: t('policy.s2Body') },
+  { title: t('policy.s3Title'), body: t('policy.s3Body') },
+  { title: t('policy.s4Title'), body: t('policy.s4Body') },
+  { title: t('policy.s5Title'), body: t('policy.s5Body') },
+  { title: t('policy.s6Title'), body: t('policy.s6Body') },
+  { title: t('policy.s7Title'), body: t('policy.s7Body') }
+]
+---
+
+<main class="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16 text-sm">
+  <div>
+    <h1 class="text-ink mb-2 text-2xl font-semibold tracking-[-0.02em]">
+      {t('policy.heading')}
+    </h1>
+    <p class="text-faint">{t('policy.effective')}</p>
+  </div>
+
+  <div class="space-y-8">
+    {
+      sections.map((section, i) => (
+        <div class="flex gap-4">
+          <span class="text-faint shrink-0 font-mono tabular-nums">
+            [{i + 1}]
+          </span>
+          <div>
+            <p class="text-ink mb-1 font-semibold">{section.title}</p>
+            <p class="text-muted leading-relaxed" set:html={section.body} />
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</main>
