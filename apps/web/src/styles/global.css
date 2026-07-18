@@ -48,11 +48,9 @@
   CSS utilities and component <style> blocks can read them.
 */
 :root {
-  /* Motion — entries fade + translateY(5px), .5s; hover .16s; active scale .97 */
-  --motion-reveal-duration: 500ms;
+  /* Motion — reveal easing (out-expo); hover .16s; active scale .97. Per-gesture reveal
+     duration/shift/stagger live on the [data-reveal='blur'|'rise'] rules. */
   --motion-reveal-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --motion-reveal-shift: 5px;
-  --motion-stagger: 70ms;
   --motion-hover-duration: 160ms;
   --motion-hover-brightness: 1.13;
   --motion-active-scale: 0.97;
@@ -204,6 +202,10 @@
     color: var(--color-ink);
     font-weight: 600;
   }
+  /* Hero headline splits into two stacked lines so each reveals in turn. */
+  .headline .hero-line {
+    display: block;
+  }
 
   /* Elevated panel — transparent border + double background so a blue glow enters from
      the top-left corner (gradient-border technique). Reused by the hero demo (ticket 04). */
@@ -251,22 +253,45 @@
   }
 
   /*
-    Scroll reveals — progressive enhancement. Elements only start hidden once JS is
-    present (html.js is set pre-paint in the layout head), so a no-JS render shows
-    everything. Motion's inView toggles .is-visible; the animation and the per-item
-    stagger (--i) live here, transform/opacity only. Reduced motion neutralizes it below.
+    Entrance reveals — progressive enhancement (html.js set pre-paint, so a no-JS render
+    shows everything). Motion's inView toggles .is-visible. Only two sections animate,
+    each with its own gesture: the hero rises from below with blur (Linear-style), the
+    model cards rise + scale. Everything else is intentionally static. Reduced motion
+    neutralizes both below. transform/opacity/filter only.
   */
   .js [data-reveal] {
     opacity: 0;
-    transform: translateY(var(--motion-reveal-shift));
-    transition:
-      opacity var(--motion-reveal-duration) var(--motion-reveal-ease),
-      transform var(--motion-reveal-duration) var(--motion-reveal-ease);
-    transition-delay: calc(var(--i, 0) * var(--motion-stagger));
+    will-change: transform, opacity;
   }
   .js [data-reveal].is-visible {
     opacity: 1;
     transform: none;
+    filter: none;
+  }
+
+  /* Hero — fade + small rise + blur (the movement is carried by the blur, not distance).
+     The headline splits into two stacked lines, so "Read it once." and "Remember it
+     forever." reveal in sequence like the rest of the hero. The per-item stagger delay
+     must live AFTER the transition shorthand (the shorthand resets transition-delay). */
+  .js [data-reveal='blur'] {
+    --stagger: 100ms;
+    transform: translateY(10px);
+    filter: blur(10px);
+    transition:
+      opacity 1s var(--motion-reveal-ease),
+      transform 1s var(--motion-reveal-ease),
+      filter 1.5s var(--motion-reveal-ease);
+    transition-delay: calc(var(--i, 0) * var(--stagger));
+  }
+
+  /* Model cards — fade + rise + scale. */
+  .js [data-reveal='rise'] {
+    --stagger: 90ms;
+    transform: translateY(18px) scale(0.96);
+    transition:
+      opacity 0.9s var(--motion-reveal-ease),
+      transform 0.9s var(--motion-reveal-ease);
+    transition-delay: calc(var(--i, 0) * var(--stagger));
   }
 }
 
@@ -285,5 +310,6 @@
   .js [data-reveal] {
     opacity: 1;
     transform: none;
+    filter: none;
   }
 }

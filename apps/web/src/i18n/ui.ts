@@ -27,10 +27,10 @@ export const ui = {
 
     // Hero
     'hero.eyebrow': 'Local-first article summaries',
-    'hero.titleLead': 'Read less, ',
-    'hero.titleStrong': 'understand more.',
+    'hero.titleLead': 'Read it once. ',
+    'hero.titleStrong': 'Remember it forever.',
     'hero.sub':
-      'ArticleLens turns any article into a clean, structured summary — running entirely on your device, or through your own cloud key.',
+      'ArticleLens distills any article into the key points — so you can recall what mattered later, without hunting back through the page.',
 
     // Hero demo panel — example content streamed by the animated demo (HeroDemo).
     'demo.chip': 'Llama 3.2 3B · local',
@@ -185,10 +185,10 @@ export const ui = {
 
     // Hero
     'hero.eyebrow': 'Resúmenes de artículos local-first',
-    'hero.titleLead': 'Leé menos, ',
-    'hero.titleStrong': 'entendé más.',
+    'hero.titleLead': 'Leélo una vez. ',
+    'hero.titleStrong': 'Recordalo para siempre.',
     'hero.sub':
-      'ArticleLens convierte cualquier artículo en un resumen limpio y estructurado — corriendo enteramente en tu dispositivo, o a través de tu propia key cloud.',
+      'ArticleLens destila cualquier artículo en sus puntos clave — para que recuerdes lo que importó después, sin volver a rastrear la página.',
 
     // Hero demo panel — example content streamed by the animated demo (HeroDemo).
     'demo.chip': 'Llama 3.2 3B · local',

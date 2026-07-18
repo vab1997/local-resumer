@@ -99,9 +99,32 @@ export function initHeroDemo(stage: HTMLElement): void {
     out.style.opacity = '0'
   }
 
+  // First run waits for the visitor to click Summarize; if 5s pass with no click, it
+  // starts on its own. Later loops auto-press after a short beat.
+  let firstRun = true
+  function armStart(): Promise<void> {
+    return new Promise((resolve) => {
+      let settled = false
+      const go = () => {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
+        run.removeEventListener('click', go)
+        resolve()
+      }
+      const timer = setTimeout(go, 5000)
+      run.addEventListener('click', go)
+    })
+  }
+
   async function runOnce() {
     reset()
-    await wait(900)
+    if (firstRun) {
+      firstRun = false
+      await armStart()
+    } else {
+      await wait(900)
+    }
 
     run.classList.add('is-pressed')
     await wait(180)
@@ -126,11 +149,11 @@ export function initHeroDemo(stage: HTMLElement): void {
     await stream(seed(titleEl, TITLE), 70)
     await wait(150)
     await stream(seed(tldrEl, TLDR), 55)
-    await wait(250)
+    await wait(100)
 
     for (const p of points) {
       p.classList.add('is-on')
-      await wait(160)
+      await wait(80)
     }
     await wait(60)
     for (const m of metrics) {

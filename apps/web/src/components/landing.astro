@@ -2,8 +2,9 @@
 // Multi-section landing — both locales from the shared dictionary. Layout via Tailwind;
 // glow/gradient-border via the @layer components primitives in global.css (.panel-frame,
 // .card, .card-hot, .headline). The hero shows the animated side-panel demo (HeroDemo).
-// Scroll reveals: each section is a [data-reveal-group]; its [data-reveal] children
-// fade/rise in with a --i stagger when the group enters the viewport.
+// Entrance reveals: only the hero and the model cards animate (each with its own gesture
+// — hero blur-rise, cards rise+scale). Their [data-reveal-group] children get .is-visible
+// when the group enters the viewport; the other sections are intentionally static.
 import { Puzzle } from '@lucide/astro'
 import GithubIcon from '@/components/github-icon.astro'
 import HeroDemo from '@/components/hero-demo.astro'
@@ -62,26 +63,32 @@ const models = [
 <!-- ============================ HERO ============================ -->
 <section data-reveal-group class="mx-auto max-w-6xl px-6 pt-20 pb-24 sm:pt-28">
   <div class="mx-auto max-w-3xl text-center">
-    <p data-reveal style="--i: 0" class="eyebrow mb-5 flex justify-center">
+    <p
+      data-reveal="blur"
+      style="--i: 0"
+      class="eyebrow mb-5 flex justify-center"
+    >
       {t('hero.eyebrow')}
     </p>
     <h1
-      data-reveal
-      style="--i: 1"
       class="headline mx-auto max-w-[18ch] text-[clamp(38px,7vw,68px)] tracking-[-0.032em]"
     >
-      {t('hero.titleLead')}<strong>{t('hero.titleStrong')}</strong>
+      <span data-reveal="blur" style="--i: 1" class="hero-line"
+        >{t('hero.titleLead')}</span
+      ><strong data-reveal="blur" style="--i: 2" class="hero-line"
+        >{t('hero.titleStrong')}</strong
+      >
     </h1>
     <p
-      data-reveal
-      style="--i: 2"
+      data-reveal="blur"
+      style="--i: 3"
       class="text-muted mx-auto mt-6 max-w-xl text-[17px] leading-[1.6]"
     >
       {t('hero.sub')}
     </p>
     <div
-      data-reveal
-      style="--i: 3"
+      data-reveal="blur"
+      style="--i: 4"
       class="mt-9 flex flex-wrap items-center justify-center gap-3"
     >
       <a
@@ -106,29 +113,19 @@ const models = [
   </div>
 
   <!-- Animated side-panel demo (ticket 04). -->
-  <div data-reveal style="--i: 4">
+  <div data-reveal="blur" style="--i: 5">
     <HeroDemo />
   </div>
 </section>
 
 <!-- ========================== PRIVACY ========================== -->
 <section id="privacy" class="border-hairline scroll-mt-24 border-t">
-  <div data-reveal-group class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
-    <p data-reveal style="--i: 0" class="eyebrow mb-4">
-      {t('privacy.eyebrow')}
-    </p>
-    <h2
-      data-reveal
-      style="--i: 1"
-      class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]"
-    >
+  <div class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p class="eyebrow mb-4">{t('privacy.eyebrow')}</p>
+    <h2 class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]">
       {t('privacy.titleLead')}<strong>{t('privacy.titleStrong')}</strong>
     </h2>
-    <p
-      data-reveal
-      style="--i: 2"
-      class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]"
-    >
+    <p class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]">
       {t('privacy.lead')}
     </p>
 
@@ -136,8 +133,8 @@ const models = [
       class="bg-hairline rounded-card border-hairline mt-12 grid grid-cols-2 gap-px overflow-hidden border md:grid-cols-4"
     >
       {
-        stats.map((s, i) => (
-          <div data-reveal style={`--i: ${i + 3}`} class="bg-surface-1 p-6">
+        stats.map((s) => (
+          <div class="bg-surface-1 p-6">
             <div class="text-accent font-mono text-[34px] leading-none font-semibold tracking-tight tabular-nums">
               {s.num}
             </div>
@@ -153,20 +150,16 @@ const models = [
 
 <!-- ======================= HOW IT WORKS ======================== -->
 <section id="how-it-works" class="border-hairline scroll-mt-24 border-t">
-  <div data-reveal-group class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
-    <p data-reveal style="--i: 0" class="eyebrow mb-4">{t('how.eyebrow')}</p>
-    <h2
-      data-reveal
-      style="--i: 1"
-      class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]"
-    >
+  <div class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p class="eyebrow mb-4">{t('how.eyebrow')}</p>
+    <h2 class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]">
       {t('how.titleLead')}<strong>{t('how.titleStrong')}</strong>
     </h2>
 
     <ol class="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
       {
         steps.map((step, i) => (
-          <li data-reveal style={`--i: ${i + 2}`}>
+          <li>
             <span class="text-faint font-mono text-[13px] tabular-nums">
               {String(i + 1).padStart(2, '0')}
             </span>
@@ -184,19 +177,11 @@ const models = [
 <!-- ========================== MODELS =========================== -->
 <section id="models" class="border-hairline scroll-mt-24 border-t">
   <div data-reveal-group class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
-    <p data-reveal style="--i: 0" class="eyebrow mb-4">{t('models.eyebrow')}</p>
-    <h2
-      data-reveal
-      style="--i: 1"
-      class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]"
-    >
+    <p class="eyebrow mb-4">{t('models.eyebrow')}</p>
+    <h2 class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]">
       {t('models.titleLead')}<strong>{t('models.titleStrong')}</strong>
     </h2>
-    <p
-      data-reveal
-      style="--i: 2"
-      class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]"
-    >
+    <p class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]">
       {t('models.lead')}
     </p>
 
@@ -204,8 +189,8 @@ const models = [
       {
         models.map((m, i) => (
           <div
-            data-reveal
-            style={`--i: ${i + 3}`}
+            data-reveal="rise"
+            style={`--i: ${i}`}
             class:list={['card', { 'card-hot': m.hot }, 'p-6']}
           >
             <p
@@ -234,10 +219,9 @@ const models = [
 <!-- ======================= OPEN SOURCE ========================= -->
 <section class="border-hairline scroll-mt-24 border-t">
   <div
-    data-reveal-group
     class="mx-auto flex max-w-6xl flex-col items-start justify-between gap-5 px-6 py-14 sm:flex-row sm:items-center"
   >
-    <div data-reveal style="--i: 0">
+    <div>
       <p class="text-ink text-[17px] font-semibold tracking-[-0.01em]">
         {t('oss.title')}
       </p>
@@ -246,8 +230,6 @@ const models = [
       </p>
     </div>
     <a
-      data-reveal
-      style="--i: 1"
       href={GITHUB}
       target="_blank"
       rel="noopener noreferrer"
@@ -261,25 +243,12 @@ const models = [
 
 <!-- ======================== CLOSING CTA ======================== -->
 <section class="border-hairline scroll-mt-24 border-t">
-  <div
-    data-reveal-group
-    class="mx-auto max-w-6xl px-6 py-24 text-center sm:py-32"
-  >
-    <h2
-      data-reveal
-      style="--i: 0"
-      class="headline mx-auto max-w-[20ch] text-[clamp(28px,4.5vw,44px)]"
-    >
+  <div class="mx-auto max-w-6xl px-6 py-24 text-center sm:py-32">
+    <h2 class="headline mx-auto max-w-[20ch] text-[clamp(28px,4.5vw,44px)]">
       {t('cta.titleLead')}<strong>{t('cta.titleStrong')}</strong>
     </h2>
-    <p data-reveal style="--i: 1" class="text-muted mt-4 text-[16px]">
-      {t('cta.sub')}
-    </p>
-    <div
-      data-reveal
-      style="--i: 2"
-      class="mt-8 flex flex-wrap items-center justify-center gap-3"
-    >
+    <p class="text-muted mt-4 text-[16px]">{t('cta.sub')}</p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
       <a
         href={CHROME_STORE}
         target="_blank"
