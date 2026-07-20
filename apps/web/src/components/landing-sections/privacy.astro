@@ -1,0 +1,44 @@
+---
+// Privacy — headline + 2x4 stat grid. Static (no reveal).
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+
+const stats = [
+  { num: t('privacy.stat1Num'), label: t('privacy.stat1Label') },
+  { num: t('privacy.stat2Num'), label: t('privacy.stat2Label') },
+  { num: t('privacy.stat3Num'), label: t('privacy.stat3Label') },
+  { num: t('privacy.stat4Num'), label: t('privacy.stat4Label') }
+]
+---
+
+<section id="privacy" class="border-hairline scroll-mt-24 border-t">
+  <div class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p class="eyebrow mb-4">{t('privacy.eyebrow')}</p>
+    <h2 class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]">
+      {t('privacy.titleLead')}<strong>{t('privacy.titleStrong')}</strong>
+    </h2>
+    <p class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]">
+      {t('privacy.lead')}
+    </p>
+
+    <div
+      class="bg-hairline rounded-card border-hairline mt-12 grid grid-cols-2 gap-px overflow-hidden border md:grid-cols-4"
+    >
+      {
+        stats.map((s) => (
+          <div class="bg-surface-1 p-6">
+            <div class="text-accent font-mono text-[34px] leading-none font-semibold tracking-tight tabular-nums">
+              {s.num}
+            </div>
+            <div class="text-muted mt-2.5 text-[13px] leading-[1.45]">
+              {s.label}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

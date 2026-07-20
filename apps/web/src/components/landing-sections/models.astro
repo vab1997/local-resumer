@@ -1,0 +1,77 @@
+---
+// Models — 3 pricing/model cards. Entrance: rise+scale reveal per card of the
+// [data-reveal-group]; the reveal script lives in landing.astro.
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+
+const models = [
+  {
+    hot: true,
+    kicker: t('models.localKicker'),
+    title: t('models.localTitle'),
+    body: t('models.localBody'),
+    price: t('models.localPrice'),
+    note: t('models.localNote')
+  },
+  {
+    hot: false,
+    kicker: t('models.freeKicker'),
+    title: t('models.freeTitle'),
+    body: t('models.freeBody'),
+    price: t('models.freePrice'),
+    note: t('models.freeNote')
+  },
+  {
+    hot: false,
+    kicker: t('models.byokKicker'),
+    title: t('models.byokTitle'),
+    body: t('models.byokBody'),
+    price: t('models.byokPrice'),
+    note: t('models.byokNote')
+  }
+]
+---
+
+<section id="models" class="border-hairline scroll-mt-24 border-t">
+  <div data-reveal-group class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p class="eyebrow mb-4">{t('models.eyebrow')}</p>
+    <h2 class="headline max-w-[20ch] text-[clamp(28px,4vw,40px)]">
+      {t('models.titleLead')}<strong>{t('models.titleStrong')}</strong>
+    </h2>
+    <p class="text-muted mt-4 max-w-xl text-[16px] leading-[1.6]">
+      {t('models.lead')}
+    </p>
+
+    <div class="mt-12 grid gap-4 md:grid-cols-3">
+      {
+        models.map((m, i) => (
+          <div
+            data-reveal="rise"
+            style={`--i: ${i}`}
+            class:list={['card', { 'card-hot': m.hot }, 'p-6']}
+          >
+            <p
+              class:list={[
+                'text-[11px] font-semibold tracking-[0.07em] uppercase',
+                m.hot ? 'text-accent' : 'text-faint'
+              ]}
+            >
+              {m.kicker}
+            </p>
+            <h3 class="mt-3 text-[17px] font-semibold tracking-[-0.015em]">
+              {m.title}
+            </h3>
+            <p class="text-muted mt-2 text-[14px] leading-[1.55]">{m.body}</p>
+            <p class="text-ink mt-5 text-[14px] tabular-nums">
+              {m.price}
+              <span class="text-faint"> — {m.note}</span>
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+---
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
+import { GITHUB, CHROME_STORE } from '@/utils/links'
+import GithubIcon from '@/components/github-icon.astro'
+import { Puzzle } from '@lucide/astro'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+---
+
+<section class="border-hairline scroll-mt-24 border-t">
+  <div class="mx-auto max-w-6xl px-6 py-24 text-center sm:py-32">
+    <h2 class="headline mx-auto max-w-[20ch] text-[clamp(28px,4.5vw,44px)]">
+      {t('cta.titleLead')}<strong>{t('cta.titleStrong')}</strong>
+    </h2>
+    <p class="text-muted mt-4 text-[16px]">{t('cta.sub')}</p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a
+        href={CHROME_STORE}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-primary inline-flex items-center gap-2 px-5 py-3 text-sm font-medium"
+      >
+        <Puzzle class="size-4.5" />
+        {t('nav.cta')}
+      </a>
+      <a
+        href={GITHUB}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-ghost inline-flex items-center gap-2 px-5 py-3 text-sm font-medium"
+      >
+        <GithubIcon class="size-4.5" />
+        {t('footer.github')}
+      </a>
+    </div>
+  </div>
+</section>

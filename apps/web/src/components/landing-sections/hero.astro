@@ -1,0 +1,70 @@
+---
+// Hero — animated side-panel demo (HeroDemo). Entrance: blur-rise reveal per child of
+// the [data-reveal-group]; the reveal script lives in landing.astro.
+import { Puzzle } from '@lucide/astro'
+import GithubIcon from '@/components/github-icon.astro'
+import HeroDemo from '@/components/hero-demo.astro'
+import { defaultLocale, type Locale } from '@/i18n/ui'
+import { useTranslations } from '@/i18n/utils'
+import { CHROME_STORE, GITHUB } from '@/utils/links'
+
+const locale = (Astro.currentLocale as Locale) ?? defaultLocale
+const t = useTranslations(locale)
+---
+
+<section data-reveal-group class="mx-auto max-w-6xl px-6 pt-20 pb-24 sm:pt-28">
+  <div class="mx-auto max-w-3xl text-center">
+    <p
+      data-reveal="blur"
+      style="--i: 0"
+      class="eyebrow mb-5 flex justify-center"
+    >
+      {t('hero.eyebrow')}
+    </p>
+    <h1
+      class="headline mx-auto max-w-[18ch] text-[clamp(38px,7vw,68px)] tracking-[-0.032em]"
+    >
+      <span data-reveal="blur" style="--i: 1" class="hero-line"
+        >{t('hero.titleLead')}</span
+      ><strong data-reveal="blur" style="--i: 2" class="hero-line"
+        >{t('hero.titleStrong')}</strong
+      >
+    </h1>
+    <p
+      data-reveal="blur"
+      style="--i: 3"
+      class="text-muted mx-auto mt-6 max-w-xl text-[17px] leading-[1.6]"
+    >
+      {t('hero.sub')}
+    </p>
+    <div
+      data-reveal="blur"
+      style="--i: 4"
+      class="mt-9 flex flex-wrap items-center justify-center gap-3"
+    >
+      <a
+        href={CHROME_STORE}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+      >
+        <Puzzle class="size-4.5" />
+        {t('nav.cta')}
+      </a>
+      <a
+        href={GITHUB}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-ghost inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+      >
+        <GithubIcon class="size-4.5" />
+        {t('footer.github')}
+      </a>
+    </div>
+  </div>
+
+  <!-- Animated side-panel demo (ticket 04). -->
+  <div data-reveal="blur" style="--i: 5">
+    <HeroDemo />
+  </div>
+</section>
